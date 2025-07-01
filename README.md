@@ -8,17 +8,17 @@
 
     -   `Original_Preprocessing.ipynb` contains python code with an initial pre-processing of all datasets with clinical information.
 
-    -   `Intensive_Care.R` contains R code with more thorough analysis of intensive care data.
+    -   `Intensive_Care.R` contains R code with initial analysis of intensive care data.
 
     -   `Diagnoses.R` contains R code performing categorization/grouping of various ICD-10 diagnoses of patients.
 
-    -   `Blood_Tests.py` contains python code on imputation of blood tests containing string values not suitable for analysis.
+    -   `Blood_Tests.py` contains python code on pre-processing and imputation of blood tests.
 
-    -   `Procedures.R` contains R code on various medical procedures for each individual. Categorization of procedures (SKS-Codes) has been performed + text mining/topic modelling for the characterization of them.
+    -   `Procedures.R` contains R code on various medical procedures for each individual. Categorization of procedures (SKS-Codes) has been performed (<https://sundhedsdatastyrelsen.dk/indberetning/klassifikationer/sks-klassifikationer/hovedgrupper>)
 
 -   `Merging`
 
-    -   `EWS_Blood.py` contains python code on merging of EWS (Early Warning Score) data of individuals with blood tests.
+    -   `EWS_Blood.py` contains python code on initial merging of EWS (Early Warning Score) data of individuals with blood tests.
 
     -   `EWS_ITA.py` contains python code on merging EWS + Blood Tests with Intensive Care data
 
@@ -28,35 +28,28 @@
 
 -   `modelling`
 
-    -   `EWS_Systems_Evaluation.R` :
-        -   Contains R code comparing various models and algorithms with the current NEWS2 system
+    -   `Final_Analysis.R` :
+        -   Contains R code comparing various models and algorithms for early warning systems
+        -   Implementation of the weighting model (CBPS) for the individuals
+        -   🔗 NEWS2: (<https://www.england.nhs.uk/ourwork/clinical-policy/sepsis/nationalearlywarningscore/>)
         -   🔗 NEWS2-Light: NEWS2 - Blood Pressure - Temperature
-        -   🔗 IEWS-Light: NEWS2-Light + Age + Sex
-        -   🔗 XGBoost: Age + Sex + Vital Signs + Number of Previous Hospitalizations + Embeddings of Previous Medical Procedures, Action-diagnoses, and Blood tests
-        -   🔗 Grouped Cross-Validation based on hospitals
-        -   🔗 AUC, Brier Score, Calibration, Net Benefit
-        -   🔗 Weighted performance metrics
-    -   `Sentence_Transformers_DF_Creation.ipynb` :
+        -   🔗 IEWS-Light: NEWS2-Light + Age + Sex (<https://journals.lww.com/ccmjournal/fulltext/2023/07000/development_and_external_validation_of_the.4.aspx>)
+        -   🔗 XGBoost: Age + Sex + Vital Signs + Number of Previous Hospitalizations + Embeddings of Previous Medical Procedures, Action-diagnoses + historical averages of blood test values
+        -   Grouped Cross-Validation based on hospitals
+        -   AUC, Brier Score, Calibration, Net Benefit (Differences) with weights
+    -   `Clean_M2V_Sentences.ipynb` :
         -   Contains python code for generating the full embeddings + PCA for dimensionality reduction
 
 -   **Accomplished stuff:**
 
-    -   Assessment of NEWS2 curren system based on predictive performance metrics using data-splitting techniques ✅.
+    -   Assessment of NEWS2 current system based on predictive performance metrics using data-splitting techniques ✅.
 
-    -   De-biasing the dataset with IPW based on intervention scenarios ✅
-
-        -   **Counterfactual scenario:** Natural predictive ability of EWS for mortality, unconfounded by interventions (Keeping only individuals without major interventions, weighted by their propensity)
+    -   De-biasing the dataset with IPW (Inverse Probability Weighting) based on intervention scenarios ✅
 
     -   Development of alternative early warning score systems and model comparison ✅
 
-    -   Main Outcome: 30-day mortality prediction after admission ✅
+    -   Outcome: 24-hour mortality prediction after initial NEWS2 score ✅
 
-    -   Used scores: Initial EWS score at admission ✅
+    -   Used scores: Initial NEWS2 score at admission ✅
 
-    -   Add calibration plots for the newly developed models ✅
-
-    -   Assess sustained recovery prediction ✅
-
-    -   Assess performance on various strata of target population / Assess fairness ✅
-
-    -   Create a Table 1 ✅
+    -   Assess calibration and net benefit on various strata of target population ✅
