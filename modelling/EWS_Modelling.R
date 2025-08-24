@@ -558,7 +558,7 @@ tbl_summary_weighted <-
       Previous_Hosp_Fac = "Number of previous hospitalizations",
       Blood_Pressure.Sys = "Systolic blood pressure (mm Hg)",
       previous_icu_respiratory = "Previous ICU/respiratory support",
-      EWS_score = "NEWS2 score",
+      EWS_score = "NEWS score",
       # Biomarker labels with Danish units
       median_Hemoglobin = "Hemoglobin (g/L)",
       median_Leukocytter = "Leukocytes (×10⁹/L)",
@@ -620,17 +620,17 @@ current_wf <- workflow() |>
   add_model(model) |>
   add_case_weights(imp_weights)
 
-# NEWS2-Light
+# NEWS-Light
 
 light_wf <- workflow() |>
   add_formula(Status24H ~ EWS_light) |>
   add_model(model) |>
   add_case_weights(imp_weights)
 
-# IEWS
+# DEWS
 
 full_wf <- workflow() |>
-  add_formula(Status24H ~ IEWS_Light) |>
+  add_formula(Status24H ~ DEWS) |>
   add_model(model) |>
   add_case_weights(imp_weights)
 
@@ -854,10 +854,10 @@ possibly_bootstrap <- possibly(calculate_overall_bootstrap_ci, otherwise = NULL)
 
 # Calculate bootstrapped performance metrics for all four models.
 all_model_performance <- bind_rows(
-  possibly_bootstrap(current_fit, data, "NEWS2", n_bootstrap = n_boot),
-  possibly_bootstrap(light_fit, data, "NEWS2-Light", n_bootstrap = n_boot),
-  possibly_bootstrap(full_fit, data, "IEWS-Light", n_bootstrap = n_boot),
-  possibly_bootstrap(xgb_fit, data, "XGBoost", n_bootstrap = n_boot)
+  possibly_bootstrap(current_fit, data, "NEWS", n_bootstrap = n_boot),
+  possibly_bootstrap(light_fit, data, "NEWS-Light", n_bootstrap = n_boot),
+  possibly_bootstrap(full_fit, data, "DEWS", n_bootstrap = n_boot),
+  possibly_bootstrap(xgb_fit, data, "XGB-EWS", n_bootstrap = n_boot)
 )
 
 # Create the Dot-Interval Plot
@@ -1047,22 +1047,22 @@ calculate_metrics_by_hospital_with_bootstrap_ci_refactored <- function(
 hospital_metrics_current <- calculate_metrics_by_hospital_with_bootstrap_ci_refactored(
   current_fit,
   data,
-  "NEWS2"
+  "NEWS"
 )
 hospital_metrics_light <- calculate_metrics_by_hospital_with_bootstrap_ci_refactored(
   light_fit,
   data,
-  "NEWS2-Light"
+  "NEWS-Light"
 )
 hospital_metrics_full <- calculate_metrics_by_hospital_with_bootstrap_ci_refactored(
   full_fit,
   data,
-  "IEWS-Light"
+  "DEWS"
 )
 hospital_metrics_xgb <- calculate_metrics_by_hospital_with_bootstrap_ci_refactored(
   xgb_fit,
   data,
-  "XGBoost"
+  "XGB-EWS"
 )
 
 # Combine all hospital metrics
@@ -1349,7 +1349,7 @@ decile_data_current <- create_weighted_decile_data(
   pred_current,
   weights_new
 ) %>%
-  mutate(model = "NEWS2")
+  mutate(model = "NEWS")
 
 decile_data_light <- create_weighted_decile_data(
   data,
@@ -1357,7 +1357,7 @@ decile_data_light <- create_weighted_decile_data(
   pred_light,
   weights_new
 ) %>%
-  mutate(model = "NEWS2-Light")
+  mutate(model = "NEWS-Light")
 
 decile_data_full <- create_weighted_decile_data(
   data,
@@ -1365,7 +1365,7 @@ decile_data_full <- create_weighted_decile_data(
   pred_full,
   weights_new
 ) %>%
-  mutate(model = "IEWS-Light")
+  mutate(model = "DEWS")
 
 decile_data_xgb <- create_weighted_decile_data(
   data,
@@ -1373,7 +1373,7 @@ decile_data_xgb <- create_weighted_decile_data(
   pred_xgb,
   weights_new
 ) %>%
-  mutate(model = "XGBoost")
+  mutate(model = "XGB-EWS")
 
 # Combine all data into a single tibble
 all_decile_data <- bind_rows(
@@ -1385,7 +1385,7 @@ all_decile_data <- bind_rows(
   mutate(
     model = factor(
       model,
-      levels = c("NEWS2", "NEWS2-Light", "IEWS-Light", "XGBoost")
+      levels = c("NEWS", "NEWS-Light", "DEWS", "XGB-EWS")
     )
   )
 
@@ -1505,7 +1505,7 @@ age_decile_current <- create_grouped_decile_data(
   weights_new,
   Age_Group
 ) %>%
-  mutate(model = "NEWS2")
+  mutate(model = "NEWS")
 
 age_decile_light <- create_grouped_decile_data(
   data,
@@ -1514,7 +1514,7 @@ age_decile_light <- create_grouped_decile_data(
   weights_new,
   Age_Group
 ) %>%
-  mutate(model = "NEWS2-Light")
+  mutate(model = "NEWS-Light")
 
 age_decile_full <- create_grouped_decile_data(
   data,
@@ -1523,7 +1523,7 @@ age_decile_full <- create_grouped_decile_data(
   weights_new,
   Age_Group
 ) %>%
-  mutate(model = "IEWS-Light")
+  mutate(model = "DEWS")
 
 age_decile_xgb <- create_grouped_decile_data(
   data,
@@ -1532,7 +1532,7 @@ age_decile_xgb <- create_grouped_decile_data(
   weights_new,
   Age_Group
 ) %>%
-  mutate(model = "XGBoost")
+  mutate(model = "XGB-EWS")
 
 # Combine all results
 all_age_decile_data <- bind_rows(
@@ -1544,7 +1544,7 @@ all_age_decile_data <- bind_rows(
   mutate(
     model = factor(
       model,
-      levels = c("NEWS2", "NEWS2-Light", "IEWS-Light", "XGBoost")
+      levels = c("NEWS", "NEWS-Light", "DEWS", "XGB-EWS")
     )
   )
 
@@ -1610,7 +1610,7 @@ sex_decile_current <- create_grouped_decile_data(
   weights_new,
   Sex
 ) %>%
-  mutate(model = "NEWS2")
+  mutate(model = "NEWS")
 
 sex_decile_light <- create_grouped_decile_data(
   data,
@@ -1619,7 +1619,7 @@ sex_decile_light <- create_grouped_decile_data(
   weights_new,
   Sex
 ) %>%
-  mutate(model = "NEWS2-Light")
+  mutate(model = "NEWS-Light")
 
 sex_decile_full <- create_grouped_decile_data(
   data,
@@ -1628,7 +1628,7 @@ sex_decile_full <- create_grouped_decile_data(
   weights_new,
   Sex
 ) %>%
-  mutate(model = "IEWS-Light")
+  mutate(model = "DEWS")
 
 sex_decile_xgb <- create_grouped_decile_data(
   data,
@@ -1637,7 +1637,7 @@ sex_decile_xgb <- create_grouped_decile_data(
   weights_new,
   Sex
 ) %>%
-  mutate(model = "XGBoost")
+  mutate(model = "XGB-EWS")
 
 # Combine all results
 all_sex_decile_data <- bind_rows(
@@ -1649,7 +1649,7 @@ all_sex_decile_data <- bind_rows(
   mutate(
     model = factor(
       model,
-      levels = c("NEWS2", "NEWS2-Light", "IEWS-Light", "XGBoost")
+      levels = c("NEWS", "NEWS-Light", "DEWS", "XGB-EWS")
     )
   )
 
@@ -1798,7 +1798,7 @@ nb_current <- calculate_weighted_nb(
   weights_new,
   thresholds
 ) %>%
-  mutate(model = "NEWS2")
+  mutate(model = "NEWS")
 nb_light <- calculate_weighted_nb(
   data,
   pred_light,
@@ -1806,7 +1806,7 @@ nb_light <- calculate_weighted_nb(
   weights_new,
   thresholds
 ) %>%
-  mutate(model = "NEWS2-Light")
+  mutate(model = "NEWS-Light")
 nb_full <- calculate_weighted_nb(
   data,
   pred_full,
@@ -1814,7 +1814,7 @@ nb_full <- calculate_weighted_nb(
   weights_new,
   thresholds
 ) %>%
-  mutate(model = "IEWS-Light")
+  mutate(model = "DEWS")
 nb_xgb <- calculate_weighted_nb(
   data,
   pred_xgb,
@@ -1822,7 +1822,7 @@ nb_xgb <- calculate_weighted_nb(
   weights_new,
   thresholds
 ) %>%
-  mutate(model = "XGBoost")
+  mutate(model = "XGB-EWS")
 
 # Calculate Net Benefit for "Treat All"
 
@@ -1858,10 +1858,10 @@ all_nb_data <- bind_rows(
     model = factor(
       model,
       levels = c(
-        "XGBoost",
-        "IEWS-Light",
-        "NEWS2",
-        "NEWS2-Light",
+        "XGB-EWS",
+        "DEWS",
+        "NEWS",
+        "NEWS-Light",
         "Treat All",
         "Treat None"
       )
@@ -1913,7 +1913,7 @@ nb_at_cuts_current <- calculate_weighted_nb(
   weights_new,
   cut_points
 ) %>%
-  mutate(model = "NEWS2")
+  mutate(model = "NEWS")
 nb_at_cuts_light <- calculate_weighted_nb(
   data,
   pred_light,
@@ -1921,7 +1921,7 @@ nb_at_cuts_light <- calculate_weighted_nb(
   weights_new,
   cut_points
 ) %>%
-  mutate(model = "NEWS2-Light")
+  mutate(model = "NEWS-Light")
 nb_at_cuts_full <- calculate_weighted_nb(
   data,
   pred_full,
@@ -1929,7 +1929,7 @@ nb_at_cuts_full <- calculate_weighted_nb(
   weights_new,
   cut_points
 ) %>%
-  mutate(model = "IEWS-Light")
+  mutate(model = "DEWS")
 nb_at_cuts_xgb <- calculate_weighted_nb(
   data,
   pred_xgb,
@@ -1937,7 +1937,7 @@ nb_at_cuts_xgb <- calculate_weighted_nb(
   weights_new,
   cut_points
 ) %>%
-  mutate(model = "XGBoost")
+  mutate(model = "XGB-EWS")
 
 # For "Treat All" strategy
 nb_at_cuts_all <- tibble(
@@ -1975,10 +1975,10 @@ comparison_data_consistent <- nb_at_exact_cuts %>%
   mutate(
     across(
       .cols = c(
-        NEWS2,
-        `NEWS2-Light`,
-        XGBoost,
-        `IEWS-Light`,
+        NEWS,
+        `NEWS-Light`,
+        `XGB-EWS`,
+        `DEWS`,
         `Treat All`,
         `Treat None`
       ),
@@ -1986,17 +1986,17 @@ comparison_data_consistent <- nb_at_exact_cuts %>%
     )
   ) %>%
   mutate(
-    difference1 = NEWS2 - XGBoost,
-    difference2 = NEWS2 - `NEWS2-Light`
+    difference1 = NEWS -  `XGB-EWS`,
+    difference2 = NEWS - `NEWS-Light`
   ) %>%
   select(
     threshold,
     `Treat All`,
     `Treat None`,
-    NEWS2,
-    `NEWS2-Light`,
-    `IEWS-Light`,
-    XGBoost,
+    NEWS,
+    `NEWS-Light`,
+    `DEWS`,
+     `XGB-EWS`,
     difference1,
     difference2
   ) %>%
@@ -2019,9 +2019,9 @@ final_comparison_table <- comparison_data_consistent %>%
     threshold,
     `Treat All`,
     `Treat None`,
-    NEWS2,
-    `NEWS2-Light`,
-    XGBoost,
+    NEWS,
+    `NEWS-Light`,
+     `XGB-EWS`,
     difference1,
     difference2
   ) %>%
@@ -2034,11 +2034,11 @@ final_comparison_table <- comparison_data_consistent %>%
     threshold = "Risk Threshold",
     `Treat All` = "Treat All",
     `Treat None` = "Treat None",
-    NEWS2 = "NEWS2",
-    `NEWS2-Light` = "NEWS2-Light",
-    XGBoost = "XGBoost",
-    difference1 = "NEWS2 vs XGBoost",
-    difference2 = "NEWS2 vs NEWS2-Light"
+    NEWS = "NEWS",
+    `NEWS-Light` = "NEWS-Light",
+     `XGB-EWS` = "XGB-EWS",
+    difference1 = "NEWS vs XGB-EWS",
+    difference2 = "NEWS vs NEWS-Light"
   ) %>%
   # Format numbers with middle dot and space as thousands separator
   fmt_number(
@@ -2055,7 +2055,7 @@ final_comparison_table <- comparison_data_consistent %>%
   ) %>%
   tab_spanner(
     label = "Net Benefit per 10 000 Patients",
-    columns = c(`Treat All`, `Treat None`, NEWS2, `NEWS2-Light`, XGBoost)
+    columns = c(`Treat All`, `Treat None`, NEWS, `NEWS-Light`, `XGB-EWS`)
   ) %>%
   tab_spanner(
     label = "Net Benefit Difference per 10 000",
@@ -2066,7 +2066,7 @@ final_comparison_table <- comparison_data_consistent %>%
     locations = cells_body(columns = c(difference1, difference2))
   ) %>%
   tab_footnote(
-    footnote = "Positive (blue) indicates NEWS2 has higher net benefit; Negative (red) indicates the comparator is better.",
+    footnote = "Positive (blue) indicates NEWS has higher net benefit; Negative (red) indicates the comparator is better.",
     locations = cells_column_spanners(spanners = contains("Difference"))
   )
 
@@ -2111,7 +2111,7 @@ age_stratified_nb_exact <- map_dfr(
       weights_new,
       cut_points
     ) %>%
-      mutate(model = "NEWS2")
+      mutate(model = "NEWS")
     nb_light <- calculate_weighted_nb(
       data_subset,
       pred_light,
@@ -2119,7 +2119,7 @@ age_stratified_nb_exact <- map_dfr(
       weights_new,
       cut_points
     ) %>%
-      mutate(model = "NEWS2-Light")
+      mutate(model = "NEWS-Light")
     nb_full <- calculate_weighted_nb(
       data_subset,
       pred_full,
@@ -2127,7 +2127,7 @@ age_stratified_nb_exact <- map_dfr(
       weights_new,
       cut_points
     ) %>%
-      mutate(model = "IEWS-Light")
+      mutate(model = "DEWS")
     nb_xgb <- calculate_weighted_nb(
       data_subset,
       pred_xgb,
@@ -2135,7 +2135,7 @@ age_stratified_nb_exact <- map_dfr(
       weights_new,
       cut_points
     ) %>%
-      mutate(model = "XGBoost")
+      mutate(model = "XGB-EWS")
 
     nb_all <- tibble(
       threshold = cut_points,
@@ -2170,10 +2170,10 @@ final_age_stratified_table <- age_stratified_nb_exact %>%
   mutate(
     across(
       .cols = c(
-        NEWS2,
-        `NEWS2-Light`,
-        XGBoost,
-        `IEWS-Light`,
+        NEWS,
+        `NEWS-Light`,
+        `XGB-EWS`,
+        `DEWS`,
         `Treat All`,
         `Treat None`
       ),
@@ -2181,8 +2181,8 @@ final_age_stratified_table <- age_stratified_nb_exact %>%
     )
   ) %>%
   mutate(
-    difference1 = NEWS2 - XGBoost,
-    difference2 = NEWS2 - `NEWS2-Light`
+    difference1 = NEWS -  `XGB-EWS`,
+    difference2 = NEWS - `NEWS-Light`
   )
 
 # Calculate the color domain robustly before creating the table
@@ -2199,9 +2199,9 @@ final_age_stratified_table_weights <- final_age_stratified_table %>%
     threshold,
     `Treat All`,
     `Treat None`,
-    NEWS2,
-    `NEWS2-Light`,
-    XGBoost,
+    NEWS,
+    `NEWS-Light`,
+    `XGB-EWS`,
     difference1,
     difference2
   ) %>%
@@ -2216,11 +2216,11 @@ final_age_stratified_table_weights <- final_age_stratified_table %>%
     threshold = "Risk Threshold",
     `Treat All` = "Treat All",
     `Treat None` = "Treat None",
-    NEWS2 = "NEWS2",
-    `NEWS2-Light` = "NEWS2-Light",
-    XGBoost = "XGBoost",
-    difference1 = "NEWS2 vs. XGBoost",
-    difference2 = "NEWS2 vs. NEWS2-Light"
+    NEWS = "NEWS",
+    `NEWS-Light` = "NEWS-Light",
+     `XGB-EWS` = "XGB-EWS",
+    difference1 = "NEWS vs. XGB-EWS",
+    difference2 = "NEWS vs. NEWS-Light"
   ) %>%
   # Format numbers with middle dot and space as thousands separator
   fmt_number(
@@ -2237,7 +2237,7 @@ final_age_stratified_table_weights <- final_age_stratified_table %>%
   ) %>%
   tab_spanner(
     label = "Net Benefit per 10 000 Patients",
-    columns = c(`Treat All`, `Treat None`, NEWS2, `NEWS2-Light`, XGBoost)
+    columns = c(`Treat All`, `Treat None`, NEWS, `NEWS-Light`,  `XGB-EWS`)
   ) %>%
   tab_spanner(
     label = "Net Benefit Difference per 10 000",
@@ -2249,7 +2249,7 @@ final_age_stratified_table_weights <- final_age_stratified_table %>%
   ) %>%
   tab_options(row_group.font.weight = "bold") %>%
   tab_footnote(
-    footnote = "Positive (blue) indicates NEWS2 has higher net benefit; Negative (red) indicates the comparator is better.",
+    footnote = "Positive (blue) indicates NEWS has higher net benefit; Negative (red) indicates the comparator is better.",
     locations = cells_column_spanners(spanners = contains("Difference"))
   )
 
@@ -2303,7 +2303,7 @@ all_department_nb <- map_dfr(
       weights_new,
       cut_points
     ) %>%
-      mutate(model = "NEWS2")
+      mutate(model = "NEWS")
     nb_light <- calculate_weighted_nb(
       data_subset,
       pred_light,
@@ -2311,7 +2311,7 @@ all_department_nb <- map_dfr(
       weights_new,
       cut_points
     ) %>%
-      mutate(model = "NEWS2-Light")
+      mutate(model = "NEWS-Light")
     nb_xgb <- calculate_weighted_nb(
       data_subset,
       pred_xgb,
@@ -2319,7 +2319,7 @@ all_department_nb <- map_dfr(
       weights_new,
       cut_points
     ) %>%
-      mutate(model = "XGBoost")
+      mutate(model = "XGB-EWS")
 
     nb_all <- tibble(
       threshold = cut_points,
@@ -2351,13 +2351,13 @@ final_department_table_data <- all_department_nb %>%
   pivot_wider(names_from = model, values_from = net_benefit) %>%
   mutate(across(where(is.numeric) & !matches("threshold"), ~ .x * 10000)) %>%
   mutate(across(
-    c(NEWS2, `NEWS2-Light`, XGBoost, `Treat All`, `Treat None`),
+    c(NEWS, `NEWS-Light`,  `XGB-EWS`, `Treat All`, `Treat None`),
     ~ round(.x, digits = 1),
     .names = "{.col}"
   )) %>%
   mutate(
-    difference1 = NEWS2 - XGBoost,
-    difference2 = NEWS2 - `NEWS2-Light`
+    difference1 = NEWS -  `XGB-EWS`,
+    difference2 = NEWS - `NEWS-Light`
   )
 
 # Calculate the color domain robustly before creating the table
@@ -2382,11 +2382,11 @@ final_department_table <- final_department_table_data %>%
     threshold = "Risk Threshold",
     `Treat All` = "Treat All",
     `Treat None` = "Treat None",
-    NEWS2 = "NEWS2",
-    `NEWS2-Light` = "NEWS2-Light",
-    XGBoost = "XGBoost",
-    difference1 = "NEWS2 vs. XGBoost",
-    difference2 = "NEWS2 vs. NEWS2-Light"
+    NEWS = "NEWS",
+    `NEWS-Light` = "NEWS-Light",
+     `XGB-EWS` = "XGB-EWS",
+    difference1 = "NEWS vs. XGB-EWS",
+    difference2 = "NEWS vs. NEWS-Light"
   ) %>%
   fmt_number(
     columns = threshold,
@@ -2402,7 +2402,7 @@ final_department_table <- final_department_table_data %>%
   ) %>%
   tab_spanner(
     label = "Net Benefit per 10 000 Patients",
-    columns = c(`Treat All`, `Treat None`, NEWS2, `NEWS2-Light`, XGBoost)
+    columns = c(`Treat All`, `Treat None`, NEWS, `NEWS-Light`,  `XGB-EWS`)
   ) %>%
   tab_spanner(
     label = "Net Benefit Difference per 10 000",
@@ -2414,7 +2414,7 @@ final_department_table <- final_department_table_data %>%
   ) %>%
   tab_options(row_group.font.weight = "bold") %>%
   tab_footnote(
-    footnote = "Positive (blue) indicates NEWS2 has higher net benefit; Negative (red) indicates the comparator is better.",
+    footnote = "Positive (blue) indicates NEWS has higher net benefit; Negative (red) indicates the comparator is better.",
     locations = cells_column_spanners(spanners = contains("Difference"))
   )
 
@@ -2461,7 +2461,7 @@ sex_stratified_nb_exact <- map_dfr(
       weights_new,
       cut_points
     ) %>%
-      mutate(model = "NEWS2")
+      mutate(model = "NEWS")
     nb_light <- calculate_weighted_nb(
       data_subset,
       pred_light,
@@ -2469,7 +2469,7 @@ sex_stratified_nb_exact <- map_dfr(
       weights_new,
       cut_points
     ) %>%
-      mutate(model = "NEWS2-Light")
+      mutate(model = "NEWS-Light")
     nb_xgb <- calculate_weighted_nb(
       data_subset,
       pred_xgb,
@@ -2477,7 +2477,7 @@ sex_stratified_nb_exact <- map_dfr(
       weights_new,
       cut_points
     ) %>%
-      mutate(model = "XGBoost")
+      mutate(model = "XGB-EWS")
 
     nb_all <- tibble(
       threshold = cut_points,
@@ -2509,12 +2509,12 @@ final_sex_table_data <- sex_stratified_nb_exact %>%
   pivot_wider(names_from = model, values_from = net_benefit) %>%
   mutate(across(where(is.numeric) & !matches("threshold"), ~ .x * 10000)) %>%
   mutate(across(
-    c(NEWS2, `NEWS2-Light`, XGBoost, `Treat All`, `Treat None`),
+    c(NEWS, `NEWS-Light`,  `XGB-EWS`, `Treat All`, `Treat None`),
     ~ round(.x, digits = 1)
   )) %>%
   mutate(
-    difference1 = NEWS2 - XGBoost,
-    difference2 = NEWS2 - `NEWS2-Light`
+    difference1 = NEWS -  `XGB-EWS`,
+    difference2 = NEWS - `NEWS-Light`
   )
 
 # Calculate the color domain robustly before creating the table
@@ -2536,11 +2536,11 @@ final_sex_table <- final_sex_table_data %>%
     threshold = "Risk Threshold",
     `Treat All` = "Treat All",
     `Treat None` = "Treat None",
-    NEWS2 = "NEWS2",
-    `NEWS2-Light` = "NEWS2-Light",
-    XGBoost = "XGBoost",
-    difference1 = "NEWS2 vs. XGBoost",
-    difference2 = "NEWS2 vs. NEWS2-Light"
+    NEWS = "NEWS",
+    `NEWS-Light` = "NEWS-Light",
+     `XGB-EWS` = "XGB-EWS",
+    difference1 = "NEWS vs. XGB-EWS",
+    difference2 = "NEWS vs. NEWS-Light"
   ) %>%
   fmt_number(
     columns = threshold,
@@ -2556,7 +2556,7 @@ final_sex_table <- final_sex_table_data %>%
   ) %>%
   tab_spanner(
     label = "Net Benefit per 10 000 Patients",
-    columns = c(`Treat All`, `Treat None`, NEWS2, `NEWS2-Light`, XGBoost)
+    columns = c(`Treat All`, `Treat None`, NEWS, `NEWS-Light`,  `XGB-EWS`)
   ) %>%
   tab_spanner(
     label = "Net Benefit Difference per 10 000",
@@ -2568,7 +2568,7 @@ final_sex_table <- final_sex_table_data %>%
   ) %>%
   tab_options(row_group.font.weight = "bold") %>%
   tab_footnote(
-    footnote = "Positive (blue) indicates NEWS2 has higher net benefit; Negative (red) indicates the comparator is better.",
+    footnote = "Positive (blue) indicates NEWS has higher net benefit; Negative (red) indicates the comparator is better.",
     locations = cells_column_spanners(spanners = contains("Difference"))
   )
 
@@ -2619,7 +2619,7 @@ diagnosis_stratified_nb_exact <- map_dfr(
       weights_new,
       cut_points
     ) %>%
-      mutate(model = "NEWS2")
+      mutate(model = "NEWS")
     nb_light <- calculate_weighted_nb(
       data_subset,
       pred_light,
@@ -2627,7 +2627,7 @@ diagnosis_stratified_nb_exact <- map_dfr(
       weights_new,
       cut_points
     ) %>%
-      mutate(model = "NEWS2-Light")
+      mutate(model = "NEWS-Light")
     nb_xgb <- calculate_weighted_nb(
       data_subset,
       pred_xgb,
@@ -2635,7 +2635,7 @@ diagnosis_stratified_nb_exact <- map_dfr(
       weights_new,
       cut_points
     ) %>%
-      mutate(model = "XGBoost")
+      mutate(model = "XGB-EWS")
 
     nb_all <- tibble(
       threshold = cut_points,
@@ -2666,12 +2666,12 @@ final_diagnosis_table_data <- diagnosis_stratified_nb_exact %>%
   pivot_wider(names_from = model, values_from = net_benefit) %>%
   mutate(across(where(is.numeric) & !matches("threshold"), ~ .x * 10000)) %>%
   mutate(across(
-    c(NEWS2, `NEWS2-Light`, XGBoost, `Treat All`, `Treat None`),
+    c(NEWS, `NEWS-Light`,  `XGB-EWS`, `Treat All`, `Treat None`),
     ~ round(.x, digits = 1)
   )) %>%
   mutate(
-    difference1 = NEWS2 - XGBoost,
-    difference2 = NEWS2 - `NEWS2-Light`
+    difference1 = NEWS -  `XGB-EWS`,
+    difference2 = NEWS - `NEWS-Light`
   )
 
 # Generate the gt object
@@ -2687,11 +2687,11 @@ final_diagnosis_table <- final_diagnosis_table_data %>%
     threshold = "Risk Threshold",
     `Treat All` = "Treat All",
     `Treat None` = "Treat None",
-    NEWS2 = "NEWS2",
-    `NEWS2-Light` = "NEWS2-Light",
-    XGBoost = "XGBoost",
-    difference1 = "NEWS2 vs. XGBoost",
-    difference2 = "NEWS2 vs. NEWS2-Light"
+    NEWS = "NEWS",
+    `NEWS-Light` = "NEWS-Light",
+    `XGB-EWS` = "XGB-EWS",
+    difference1 = "NEWS vs. XGB-EWS",
+    difference2 = "NEWS vs. NEWS-Light"
   ) %>%
   fmt_number(
     columns = threshold,
@@ -2707,7 +2707,7 @@ final_diagnosis_table <- final_diagnosis_table_data %>%
   ) %>%
   tab_spanner(
     label = "Net Benefit per 10,000 Patients",
-    columns = c(`Treat All`, `Treat None`, NEWS2, `NEWS2-Light`, XGBoost)
+    columns = c(`Treat All`, `Treat None`, NEWS, `NEWS-Light`,  `XGB-EWS`)
   ) %>%
   tab_spanner(
     label = "Net Benefit Difference per 10,000",
@@ -2719,7 +2719,7 @@ final_diagnosis_table <- final_diagnosis_table_data %>%
   ) %>%
   tab_options(row_group.font.weight = "bold") %>%
   tab_footnote(
-    footnote = "Positive indicates NEWS2 has higher net benefit; Negative indicates the comparator is better.",
+    footnote = "Positive indicates NEWS has higher net benefit; Negative indicates the comparator is better.",
     locations = cells_column_spanners(spanners = contains("Difference"))
   )
 
@@ -2819,7 +2819,7 @@ missingness_table <- df %>% # Replace with your actual dataset name
       Variable == "Blood_Pressure.Dia" ~ "Diastolic blood pressure (mm Hg)",
       Variable == "previous_icu_respiratory" ~
         "Previous ICU/respiratory support",
-      Variable == "EWS_score" ~ "NEWS2 score",
+      Variable == "EWS_score" ~ "NEWS score",
       Variable == "median_Hemoglobin" ~ "Hemoglobin (g/L)",
       Variable == "median_Leukocytter" ~ "Leukocytes (×10⁹/L)",
       Variable == "median_Trombocytter" ~ "Platelets (×10⁹/L)",
