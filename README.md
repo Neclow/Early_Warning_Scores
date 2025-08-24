@@ -17,9 +17,9 @@
     -   `EWS_Modelling.R` :
         -   Contains R code comparing various models and algorithms for early warning systems
         -   Implementation of the weighting model (CBPS) for the individuals
-        -   🔗 NEWS2: (<https://www.england.nhs.uk/ourwork/clinical-policy/sepsis/nationalearlywarningscore/>)
-        -   🔗 NEWS2-Light: NEWS2 - Blood Pressure - Temperature
-        -   🔗 IEWS-Light: NEWS2-Light + Age + Sex (<https://journals.lww.com/ccmjournal/fulltext/2023/07000/development_and_external_validation_of_the.4.aspx>)
+        -   🔗 NEWS: (<https://www.england.nhs.uk/ourwork/clinical-policy/sepsis/nationalearlywarningscore/>)
+        -   🔗 NEWS-Light: NEWS2 - Blood Pressure - Temperature
+        -   🔗 DEWS: NEWS2-Light + Age + Sex (<https://journals.lww.com/ccmjournal/fulltext/2023/07000/development_and_external_validation_of_the.4.aspx>)
         -   🔗 XGBoost: Age + Sex + Vital Signs + Number of Previous Hospitalizations + Embeddings of Previous Medical Procedures and Diagnoses + historical averages of blood test values + time-related recording information
         -   Grouped Cross-Validation based on hospitals
         -   AUC, Brier Score, Calibration, Net Benefit (Differences)
@@ -28,13 +28,13 @@
 
 -   **Accomplished stuff:**
 
-    -   Assessment of NEWS2 current system based on predictive performance metrics using data-splitting techniques ✅.
+    -   Assessment of NEWS current system based on predictive performance metrics using data-splitting techniques ✅.
 
     -   De-biasing the dataset with IPW (Inverse Probability Weighting) based on intervention scenarios ✅
 
     -   Development of alternative early warning score systems and model comparison ✅
 
-    -   Outcome: 24-hour mortality prediction after initial NEWS2 score ✅
+    -   Outcome: 24-hour mortality prediction after initial NEWS score ✅
 
     -   Used scores: Initial score at admission ✅
 
