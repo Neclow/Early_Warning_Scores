@@ -524,7 +524,7 @@ df_imputed <- df_imputed |>
 
 # Now create the scores
 
-# NEWS2 Score
+# NEWS Score
 
 df_imputed <- df_imputed |>
   mutate(
@@ -597,7 +597,7 @@ df_imputed <- df_imputed |>
   select(-Total_Score)
 
 
-# NEWS2-Light
+# NEWS-Light
 
 df_imputed <- df_imputed |>
   mutate(
@@ -649,7 +649,7 @@ df_imputed <- df_imputed |>
   select(-Total_Score)
 
 
-##### I-EWS with age and sex
+##### DEWS (NEWS-Light with age and sex)
 
 df_imputed <- df_imputed |>
   mutate(
