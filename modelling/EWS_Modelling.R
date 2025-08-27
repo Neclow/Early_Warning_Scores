@@ -457,7 +457,7 @@ bal_plot <- bal.plot(
     labels = c("No", "Yes")
   ) +
   scale_x_lancet() +
-  scale_y_lancet()
+  scale_y_lancet() +
 theme(legend.position = "top")
 
 bal_plot
