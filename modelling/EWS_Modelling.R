@@ -1,7 +1,7 @@
 # ================================
 # LANCET STYLE GGPLOT SYSTEM
 # ================================
-# Source this file to apply Lancet formatting to all your ggplot figures
+# Source this file to apply Lancet formatting to all ggplot figures
 
 library(ggplot2)
 library(stringr)
@@ -257,7 +257,7 @@ get_category <- function(specialty) {
   return("Uncategorized")
 }
 
-# Apply the categorization to your dataframe
+# Apply the categorization to dataframe
 data <- data %>%
   mutate(Specialty_Category = sapply(Department_Name, get_category))
 
@@ -583,7 +583,7 @@ tbl_summary_weighted <-
 # Print the table
 tbl_summary_weighted
 
-# Reset the theme to the default after creating your table
+# Reset the theme to the default after creating table
 gtsummary::reset_gtsummary_theme()
 
 # And save the table
@@ -1787,7 +1787,7 @@ calculate_weighted_nb <- function(data, estimate, truth, wt, thresholds) {
   )
 }
 
-# Define the thresholds to evaluate, matching your original code
+# Define the thresholds to evaluate, matching original code
 thresholds <- seq(0, 0.05, by = 0.0005)
 
 # Calculate Net Benefit for each model
@@ -2079,7 +2079,7 @@ final_comparison_table |> gtsave("weights_final_comparison_table_lanc.docx")
 ########################## Create DCA for subgroups ############################
 ################################################################################
 
-# Get the unique age groups from your data
+# Get the unique age groups from data
 age_groups <- unique(data$Age_Group)
 
 # Loop over each age group to perform DCA at exact thresholds
@@ -2426,7 +2426,7 @@ final_department_table |> gtsave("weights_dep_stratified_table.docx")
 
 # Now repeat this for males and females
 
-# Get the unique levels for Sex from your data ---
+# Get the unique levels for Sex from the data ---
 sex_levels <- unique(data$Sex)
 
 
@@ -2766,7 +2766,7 @@ df <- df |>
   )
 
 
-missingness_table <- df %>% # Replace with your actual dataset name
+missingness_table <- df %>% 
   select(
     Age,
     Sex,
@@ -2801,7 +2801,7 @@ missingness_table <- df %>% # Replace with your actual dataset name
     values_to = "Missing_Count"
   ) %>%
   mutate(
-    Total_N = nrow(df), # Replace with your actual dataset name
+    Total_N = nrow(df), 
     Missing_Percentage = (Missing_Count / Total_N) * 100,
     # Add polished variable names
     Variable_Label = case_when(
