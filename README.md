@@ -20,7 +20,7 @@
         -   🔗 NEWS: (<https://www.england.nhs.uk/ourwork/clinical-policy/sepsis/nationalearlywarningscore/>)
         -   🔗 NEWS-Light: NEWS2 - Blood Pressure - Temperature
         -   🔗 DEWS: NEWS2-Light + Age + Sex (<https://journals.lww.com/ccmjournal/fulltext/2023/07000/development_and_external_validation_of_the.4.aspx>)
-        -   🔗 XGBoost: Age + Sex + Vital Signs + Number of Previous Hospitalizations + Embeddings of Previous Medical Procedures and Diagnoses + historical averages of blood test values + time-related recording information
+        -   🔗 XGB-EWS: Age + Sex + Vital Signs + Number of Previous Hospitalizations + Embeddings of Previous Medical Procedures and Diagnoses + historical averages of blood test values + time-related recording information
         -   Grouped Cross-Validation based on hospitals
         -   AUC, Brier Score, Calibration, Net Benefit (Differences)
     -   `M2V_Embeddings.ipynb` :
