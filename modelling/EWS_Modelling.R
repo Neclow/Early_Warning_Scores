@@ -55,7 +55,7 @@ theme_lancet <- function(base_size = 14, base_family = "") {
         color = "gray40",
         margin = margin(b = 15)
       ),
-
+      
       # Axis text and titles
       axis.text.y = element_text(size = base_size - 2, color = "gray20"),
       axis.text.x = element_text(size = base_size - 3, color = "gray20"),
@@ -69,20 +69,20 @@ theme_lancet <- function(base_size = 14, base_family = "") {
         color = "gray20",
         margin = margin(r = 10)
       ),
-
+      
       # Grid lines - minimal and subtle
       panel.grid.major.y = element_blank(),
       panel.grid.minor = element_blank(),
       panel.grid.major.x = element_line(color = "gray90", linewidth = 0.3),
-
+      
       # Legend
       legend.text = element_text(size = base_size - 3),
       legend.title = element_text(size = base_size - 2, face = "bold"),
       legend.margin = margin(5, 5, 5, 5),
-
+      
       # Plot margins
       plot.margin = margin(15, 15, 15, 15),
-
+      
       # Strip text for facets
       strip.text = element_text(size = base_size - 2, face = "bold"),
       strip.background = element_rect(fill = "gray95", color = NA)
@@ -166,17 +166,22 @@ library(gt) # For summary tables
 library(gtsummary) # For tables
 library(survey) # For weights
 library(janitor) # For quick tabyls
-library(pmsampsize) # For sample size requirements
 
 ###############################################################
 ################ Start of the pre-processing ##################
 ###############################################################
 
-data <- read_parquet(
-  "/home/alex/ews/NEWS2_Evaluation/Additional_Data/df_with_embeddings.parquet"
+data <- nanoparquet::read_parquet(
+  "/home/alex/ews/NEWS2_Evaluation/Additional_Data/df_with_embeddings.parquet",
 )
 
-levels(data$Hospital)
+data$Hospital <- as.factor(data$Hospital)
+
+levels(data$Hospital)[3] <- "Hospital of Bornholm"
+
+levels(data$Hospital)[10] <- "Zealand University Hospital"
+
+data$Status24H <- as.factor(data$Status24H)
 
 data$Status24H <- relevel(data$Status24H, "Deceased")
 
@@ -185,6 +190,8 @@ data <- data |>
   relocate(Department_Name, .after = Hospital)
 
 #############################################
+
+data$Department_Name <- as.factor(data$Department_Name)
 
 data |> count(Department_Name, sort = T)
 
@@ -207,43 +214,43 @@ specialty_categories <- list(
     "Urologi",
     "Øre-næse-hals"
   ),
-
+  
   "Cardiopulmonary" = c("Kardiologi", "Lungesygdomme"),
-
+  
   "Gastroenterology" = c("Medicinsk gastroenterologi", "Hepatologi"),
-
+  
   "Neurology" = c("Neurologi"),
-
+  
   "Oncology & Hematology" = c(
     "Onkologi",
     "Hæmatologi",
     "Hæmatologi-onkologi pædiatrisk"
   ),
-
+  
   "Endocrinology & Metabolism" = c("Endokrinologi"),
-
+  
   "Nephrology" = c("Nefrologi"),
-
+  
   "Infectious Disease" = c("Infektionsmedicin"),
-
+  
   "Dermatology" = c("Dermatologi"),
-
+  
   "Rheumatology" = c("Reumatologi"),
-
+  
   "Geriatrics & Palliative" = c("Geriatri", "Palliation"),
-
+  
   "Pediatrics" = c("Pædiatri"),
-
+  
   "Internal & Acute Medicine" = c("Intern medicin", "Akutmedicin"),
-
+  
   "Critical Care" = c("Anæstesiologi", "Intensiv terapi"),
-
+  
   "Psychiatry" = c("Psykiatri"),
-
+  
   "Rehabilitation" = c("Rehabilitering"),
-
+  
   "Ophthalmology" = c("Oftalmologi"),
-
+  
   "Other" = c("Ikke-klinisk speciale", "NULL")
 )
 
@@ -347,17 +354,17 @@ data <- data |>
 weight_model <- weightit(
   Interventions_24 ~
     Age_Group +
-      Sex +
-      Hospital +
-      Blood_Pressure.Sys +
-      Temperature +
-      Saturation +
-      Pulse +
-      Previous_Hosp +
-      previous_icu_respiratory +
-      Oxygen_Supplement +
-      Consciousness +
-      pca_composite,
+    Sex +
+    Hospital +
+    Blood_Pressure.Sys +
+    Temperature +
+    Saturation +
+    Pulse +
+    Previous_Hosp +
+    previous_icu_respiratory +
+    Oxygen_Supplement +
+    Consciousness +
+    pca_composite,
   data = data,
   method = "cbps",
   estimand = "ATE"
@@ -375,7 +382,7 @@ colnames(w_df) <- c("weights_new")
 
 # Save the weights in a dataframe
 
-write_parquet(w_df, "weights_cbps_24.parquet")
+write_parquet(w_df, "weights_cbps_24_new.parquet")
 
 # Attach to the data
 data <- data %>%
@@ -406,8 +413,8 @@ plot_ipw <- data |>
 # Love plot of absolute standardized mean differences
 
 plot_love <- love_plot(plot_ipw) +
+  theme_lancet(base_size = 16) +
   theme(legend.position = "top") +
-  theme_lancet() +
   labs(
     x = "Absolute standardized mean differences",
     y = "",
@@ -423,7 +430,7 @@ plot_love <- love_plot(plot_ipw) +
       "Systolic blood pressure",
       "Consciousness",
       "Hospital",
-      "Oxygen Supplement",
+      "Oxygen supplement",
       "Embedding score",
       "Number of previous hospitalizations",
       "History of previous ICU or respiratory support",
@@ -446,7 +453,7 @@ bal_plot <- bal.plot(
   type = "histogram",
   mirror = TRUE
 ) +
-  theme_lancet() +
+  theme_lancet(base_size = 16) +
   labs(x = "Propensity Score", y = "Proportion", title = "") +
   scale_color_lancet(
     name = "Received major intervention",
@@ -458,7 +465,7 @@ bal_plot <- bal.plot(
   ) +
   scale_x_lancet() +
   scale_y_lancet() +
-theme(legend.position = "top")
+  theme(legend.position = "top")
 
 bal_plot
 
@@ -590,7 +597,7 @@ gtsummary::reset_gtsummary_theme()
 
 gtsave(
   data = tbl_summary_weighted,
-  filename = "Weighted_Summary_Table.docx"
+  filename = "Weighted_Summary_Table_New.docx"
 )
 
 #############################################
@@ -620,17 +627,17 @@ current_wf <- workflow() |>
   add_model(model) |>
   add_case_weights(imp_weights)
 
-# NEWS-Light
+# NEWS2-Light
 
 light_wf <- workflow() |>
   add_formula(Status24H ~ EWS_light) |>
   add_model(model) |>
   add_case_weights(imp_weights)
 
-# DEWS
+# IEWS
 
 full_wf <- workflow() |>
-  add_formula(Status24H ~ DEWS) |>
+  add_formula(Status24H ~ IEWS_Light) |>
   add_model(model) |>
   add_case_weights(imp_weights)
 
@@ -640,90 +647,90 @@ xgb_wf <- workflow() |>
   add_formula(
     Status24H ~
       Age +
-        Sex +
-        Respiration_Rate +
-        Temperature +
-        Saturation +
-        Oxygen_Supplement +
-        Blood_Pressure.Sys +
-        Blood_Pressure.Dia +
-        Consciousness +
-        Previous_Hosp +
-        day_type +
-        time_of_day +
-        month +
-        previous_icu_respiratory +
-        median_Hemoglobin +
-        median_Leukocytter +
-        median_Trombocytter +
-        median_Kreatinin +
-        median_ALAT +
-        median_LDH +
-        median_Albumin +
-        median_CRP +
-        median_Laktat_ab +
-        median_Troponin_T +
-        median_Laktat_vb +
-        pca_0 +
-        pca_1 +
-        pca_2 +
-        pca_3 +
-        pca_4 +
-        pca_5 +
-        pca_6 +
-        pca_7 +
-        pca_8 +
-        pca_9 +
-        pca_10 +
-        pca_11 +
-        pca_12 +
-        pca_13 +
-        pca_14 +
-        pca_15 +
-        pca_16 +
-        pca_17 +
-        pca_18 +
-        pca_19 +
-        pca_20 +
-        pca_21 +
-        pca_22 +
-        pca_23 +
-        pca_24 +
-        pca_25 +
-        pca_26 +
-        pca_27 +
-        pca_28 +
-        pca_29 +
-        pca_30 +
-        pca_31 +
-        pca_32 +
-        pca_33 +
-        pca_34 +
-        pca_35 +
-        pca_36 +
-        pca_37 +
-        pca_38 +
-        pca_39 +
-        pca_40 +
-        pca_41 +
-        pca_42 +
-        pca_43 +
-        pca_44 +
-        pca_45 +
-        pca_46 +
-        pca_47 +
-        pca_48 +
-        pca_49 +
-        pca_50 +
-        pca_51 +
-        pca_52 +
-        pca_53 +
-        pca_54 +
-        pca_55 +
-        pca_56 +
-        pca_57 +
-        pca_58 +
-        pca_59
+      Sex +
+      Respiration_Rate +
+      Temperature +
+      Saturation +
+      Oxygen_Supplement +
+      Blood_Pressure.Sys +
+      Blood_Pressure.Dia +
+      Consciousness +
+      Previous_Hosp +
+      day_type +
+      time_of_day +
+      month +
+      previous_icu_respiratory +
+      median_Hemoglobin +
+      median_Leukocytter +
+      median_Trombocytter +
+      median_Kreatinin +
+      median_ALAT +
+      median_LDH +
+      median_Albumin +
+      median_CRP +
+      median_Laktat_ab +
+      median_Troponin_T +
+      median_Laktat_vb +
+      pca_0 +
+      pca_1 +
+      pca_2 +
+      pca_3 +
+      pca_4 +
+      pca_5 +
+      pca_6 +
+      pca_7 +
+      pca_8 +
+      pca_9 +
+      pca_10 +
+      pca_11 +
+      pca_12 +
+      pca_13 +
+      pca_14 +
+      pca_15 +
+      pca_16 +
+      pca_17 +
+      pca_18 +
+      pca_19 +
+      pca_20 +
+      pca_21 +
+      pca_22 +
+      pca_23 +
+      pca_24 +
+      pca_25 +
+      pca_26 +
+      pca_27 +
+      pca_28 +
+      pca_29 +
+      pca_30 +
+      pca_31 +
+      pca_32 +
+      pca_33 +
+      pca_34 +
+      pca_35 +
+      pca_36 +
+      pca_37 +
+      pca_38 +
+      pca_39 +
+      pca_40 +
+      pca_41 +
+      pca_42 +
+      pca_43 +
+      pca_44 +
+      pca_45 +
+      pca_46 +
+      pca_47 +
+      pca_48 +
+      pca_49 +
+      pca_50 +
+      pca_51 +
+      pca_52 +
+      pca_53 +
+      pca_54 +
+      pca_55 +
+      pca_56 +
+      pca_57 +
+      pca_58 +
+      pca_59
   ) |>
   add_model(xgb) |>
   add_case_weights(imp_weights)
@@ -770,6 +777,8 @@ full_fit <- fit_resamples(
   control = cntrl
 )
 
+set.seed(234)
+
 xgb_fit <- fit_resamples(
   xgb_wf,
   resamples = data_folds,
@@ -783,10 +792,10 @@ xgb_fit <- fit_resamples(
 # Generate bootstrapped predictions
 
 calculate_overall_bootstrap_ci <- function(
-  fit_object,
-  original_data,
-  model_name,
-  n_bootstrap = 200
+    fit_object,
+    original_data,
+    model_name,
+    n_bootstrap = 200
 ) {
   preds_df <- fit_object %>%
     collect_predictions() %>%
@@ -796,16 +805,16 @@ calculate_overall_bootstrap_ci <- function(
       weights_new = original_data$weights_new,
       mort24H = if_else(Status24H == "Deceased", 1, 0)
     )
-
+  
   # Perform Bootstrapping
   set.seed(42)
-
+  
   boot_results <- map_dfr(
     1:n_bootstrap,
     ~ {
       boot_indices <- sample(1:nrow(preds_df), nrow(preds_df), replace = TRUE)
       boot_sample <- preds_df[boot_indices, ]
-
+      
       auc_val <- MetricsWeighted::AUC(
         actual = boot_sample$mort24H,
         predicted = boot_sample$.pred_Deceased,
@@ -816,7 +825,7 @@ calculate_overall_bootstrap_ci <- function(
         predicted = boot_sample$.pred_Deceased,
         w = boot_sample$weights_new
       )
-
+      
       # Return a one-row tibble for this iteration.
       tibble(
         bootstrap_id = .x,
@@ -825,7 +834,7 @@ calculate_overall_bootstrap_ci <- function(
       )
     }
   )
-
+  
   # Summarize Bootstrap Results
   summary_metrics <- boot_results %>%
     # Pivot to a long format for easy summarization by metric.
@@ -842,7 +851,7 @@ calculate_overall_bootstrap_ci <- function(
       .n = n()
     ) %>%
     mutate(model = model_name)
-
+  
   return(summary_metrics)
 }
 
@@ -937,10 +946,10 @@ final_plot
 # Compute the metrics for each hospital
 
 calculate_metrics_by_hospital_with_bootstrap_ci_refactored <- function(
-  fit_object,
-  data,
-  model_name,
-  n_bootstrap = 200
+    fit_object,
+    data,
+    model_name,
+    n_bootstrap = 200
 ) {
   calculate_metrics_on_sample <- function(df) {
     tryCatch(
@@ -964,10 +973,10 @@ calculate_metrics_by_hospital_with_bootstrap_ci_refactored <- function(
       }
     )
   }
-
+  
   # Set a single seed for reproducibility of the entire process
   set.seed(42)
-
+  
   # Prepare the initial predictions data
   preds_data <- fit_object %>%
     collect_predictions() %>%
@@ -977,19 +986,19 @@ calculate_metrics_by_hospital_with_bootstrap_ci_refactored <- function(
       Hospital = data$Hospital,
       weights_new = data$weights_new
     )
-
+  
   metrics_by_hospital <- preds_data %>%
     group_by(Hospital) %>%
     nest() %>% # Creates a list-column 'data' containing the data for each hospital
     mutate(
       n_patients = map_int(data, nrow),
-
+      
       # Calculate point estimates
       point_estimates = map(data, calculate_metrics_on_sample),
-
+      
       # Generate bootstrap resamples using rsample
       boot_samples = map(data, ~ rsample::bootstraps(.x, times = n_bootstrap)),
-
+      
       # Calculate metrics on each bootstrap sample
       boot_metrics = map(
         boot_samples,
@@ -1005,7 +1014,7 @@ calculate_metrics_by_hospital_with_bootstrap_ci_refactored <- function(
             unnest(metrics)
         }
       ),
-
+      
       # Summarize bootstrap results to get percentile confidence intervals
       conf_intervals = map(
         boot_metrics,
@@ -1024,7 +1033,7 @@ calculate_metrics_by_hospital_with_bootstrap_ci_refactored <- function(
         }
       )
     ) %>%
-
+    
     # Unnest and format the final results table
     select(Hospital, n_patients, point_estimates, conf_intervals) %>%
     unnest(c(point_estimates, conf_intervals)) %>%
@@ -1038,7 +1047,7 @@ calculate_metrics_by_hospital_with_bootstrap_ci_refactored <- function(
     ) %>%
     mutate(model = model_name) %>%
     arrange(desc(n_patients))
-
+  
   return(metrics_by_hospital)
 }
 
@@ -1073,6 +1082,7 @@ all_hospital_metrics <- bind_rows(
   hospital_metrics_xgb
 )
 
+# First do the original cleaning
 all_hospital_metrics <- all_hospital_metrics |>
   mutate(
     Hospital = if_else(
@@ -1101,7 +1111,36 @@ all_hospital_metrics <- all_hospital_metrics |>
       "Holbæk Hospital",
       Hospital
     )
-  ) |>
+  )
+
+# Now create hospital masking with the cleaned names
+hospital_mapping <- all_hospital_metrics %>%
+  distinct(Hospital, n_patients) %>%
+  arrange(desc(n_patients)) %>%
+  mutate(
+    Hospital_Masked = case_when(
+      Hospital == "Herlev and Gentofte Hospital" ~ "Hospital A and B",
+      Hospital == "Hospital of North Zealand" ~ "Hospital C",
+      Hospital == "Amager and Hvidovre Hospital" ~ "Hospital D and E",
+      Hospital == "Rigshospitalet" ~ "Hospital F",
+      Hospital == "Bispebjerg and Frederiksberg Hospitals" ~ "Hospital G and H",
+      Hospital == "Zealand University Hospital" ~ "Hospital I",
+      Hospital == "Næstved, Slagelse and Ringsted Hospitals" ~
+        "Hospital J, K, and L",
+      Hospital == "Holbæk Hospital" ~ "Hospital M",
+      Hospital == "Nykøbing Hospital" ~ "Hospital N",
+      Hospital == "Hospital of Bornholm" ~ "Hospital O"
+    )
+  )
+
+# Apply the masking
+all_hospital_metrics <- all_hospital_metrics %>%
+  left_join(
+    hospital_mapping %>% select(Hospital, Hospital_Masked),
+    by = "Hospital"
+  ) %>%
+  mutate(Hospital = Hospital_Masked) %>%
+  select(-Hospital_Masked) %>%
   mutate_at(vars(Hospital), as.factor)
 
 ##### Create a dotplot for the hospital metrics ######
@@ -1121,9 +1160,7 @@ all_hospital_metrics <- all_hospital_metrics %>%
   left_join(hospital_order %>% select(Hospital, y_level), by = "Hospital") %>%
   mutate(Hospital_Ordered = fct_reorder(Hospital, y_level, .desc = FALSE))
 
-
 # Plot of the AUC for hospitals
-
 auc_dotplot_ci_refined <- ggplot(all_hospital_metrics) +
   geom_rect(
     data = shading_data,
@@ -1159,19 +1196,19 @@ auc_dotplot_ci_refined <- ggplot(all_hospital_metrics) +
     )
   ) +
   labs(
-    x = "AUC (Higher is Better)",
+    x = "Area Under the Receiver Operating Characteristic Curve (AUC)",
     y = "",
-    color = "Model"
+    color = ""
   ) +
-  theme_minimal(base_size = 14) +
+  theme_minimal(base_size = 16) +
   theme(
     legend.position = "top",
     panel.grid.major.x = element_line(color = "grey85"),
     panel.grid.major.y = element_blank(),
     panel.grid.minor = element_blank(),
-    axis.text.y = element_text(size = rel(0.85))
+    axis.text.y = element_text(size = rel(0.95)),
+    axis.title.x = element_text(margin = margin(t = 15))
   )
-
 
 # Define dodging width for consistency
 dodge_width <- 0.7
@@ -1211,18 +1248,20 @@ brier_dotplot_ci_refined <- ggplot(
     )
   ) +
   labs(
-    x = "Brier Score (Lower is Better)",
+    x = "Brier Score",
     y = NULL,
-    color = "Model"
+    color = ""
   ) +
-  theme_minimal(base_size = 14) +
+  theme_minimal(base_size = 16) +
   theme(
     legend.position = "top",
     panel.grid.major.x = element_line(color = "grey85"),
     panel.grid.major.y = element_blank(),
     panel.grid.minor = element_blank(),
-    axis.text.y = element_text(size = rel(0.85))
+    axis.text.y = element_text(size = rel(0.95)),
+    axis.title.x = element_text(margin = margin(t = 15))
   )
+
 ##############################################
 ########### Calibration Curves ###############
 ##############################################
@@ -1296,7 +1335,7 @@ create_weighted_decile_data <- function(data, truth, estimate, wt) {
   truth_col <- enquo(truth)
   estimate_col <- enquo(estimate)
   wt_col <- enquo(wt)
-
+  
   # Prepare the data by creating the outcome and decile groups
   binned_data <- data %>%
     mutate(
@@ -1304,7 +1343,7 @@ create_weighted_decile_data <- function(data, truth, estimate, wt) {
       decile = ntile({{ estimate }}, 10) # Create 10 decile groups
     ) %>%
     group_by(decile)
-
+  
   # Calculate the straightforward weighted mean of the predictions in each decile
   mean_predictions <- binned_data %>%
     summarise(
@@ -1315,7 +1354,7 @@ create_weighted_decile_data <- function(data, truth, estimate, wt) {
       ),
       .groups = 'drop'
     )
-
+  
   # Second, calculate the weighted observed frequency and its confidence interval
   observed_frequencies <- binned_data %>%
     group_modify(
@@ -1337,7 +1376,7 @@ create_weighted_decile_data <- function(data, truth, estimate, wt) {
         )
       }
     )
-
+  
   # Join the two summaries back together
   left_join(mean_predictions, observed_frequencies, by = "decile")
 }
@@ -1428,14 +1467,16 @@ calibration_bar_plot <- ggplot(
     y = "Frequency",
     fill = "Group" # This is the title for the legend
   ) +
-  theme_minimal(base_size = 14) +
+  theme_minimal(base_size = 16) +
   theme(
     legend.position = "top",
     plot.title = element_text(hjust = 0.5, face = "bold"),
     plot.subtitle = element_text(hjust = 0.5),
     strip.text = element_text(face = "bold", size = 12),
     panel.grid.major.x = element_blank(),
-    panel.grid.minor.y = element_blank()
+    panel.grid.minor.y = element_blank(),
+    axis.title.y = element_text(margin = margin(r = 15)),
+    axis.title.x = element_text(margin = margin(t = 15))
   )
 
 # Print the final plot
@@ -1451,13 +1492,13 @@ create_grouped_decile_data <- function(data, truth, estimate, wt, ...) {
   truth_col <- enquo(truth)
   estimate_col <- enquo(estimate)
   wt_col <- enquo(wt)
-
+  
   binned_data <- data %>%
     mutate(truth_numeric = if_else(!!truth_col == "Deceased", 1, 0)) %>%
     group_by(!!!grouping_vars) %>%
     mutate(decile = ntile(!!estimate_col, 10)) %>%
     group_by(!!!grouping_vars, decile) # Regroup with deciles for summarization
-
+  
   # Calculate the weighted mean of predictions
   mean_predictions <- binned_data %>%
     summarise(
@@ -1468,7 +1509,7 @@ create_grouped_decile_data <- function(data, truth, estimate, wt, ...) {
       ),
       .groups = 'drop'
     )
-
+  
   # Calculate weighted observed frequency and CI using the survey package
   observed_frequencies <- binned_data %>%
     group_modify(
@@ -1488,7 +1529,7 @@ create_grouped_decile_data <- function(data, truth, estimate, wt, ...) {
       },
       .keep = TRUE
     ) # .keep = TRUE retains grouping variables
-
+  
   # Join the summaries
   left_join(
     mean_predictions,
@@ -1586,7 +1627,7 @@ age_cal_bar_plot <- ggplot(
     y = "Frequency",
     fill = "Group"
   ) +
-  theme_minimal(base_size = 14) +
+  theme_minimal(base_size = 16) +
   theme(
     legend.position = "top",
     strip.text = element_text(face = "bold"), # Make facet titles bold
@@ -1594,7 +1635,9 @@ age_cal_bar_plot <- ggplot(
     panel.grid.major.x = element_blank(),
     panel.grid.minor.y = element_blank(),
     axis.text.x = element_text(angle = 45, hjust = 1),
-    panel.spacing.y = unit(2, "lines") # Add vertical spacing between age groups
+    panel.spacing.y = unit(2, "lines"),
+    axis.title.y = element_text(margin = margin(r = 15)),
+    axis.title.x = element_text(margin = margin(t = 15))
   )
 
 # Print the final plot
@@ -1691,7 +1734,7 @@ sex_cal_bar_plot <- ggplot(
     y = "Frequency",
     fill = "Group"
   ) +
-  theme_minimal(base_size = 14) +
+  theme_minimal(base_size = 16) +
   theme(
     legend.position = "top",
     strip.text = element_text(face = "bold"), # Make facet titles bold
@@ -1699,7 +1742,9 @@ sex_cal_bar_plot <- ggplot(
     panel.grid.major.x = element_blank(),
     panel.grid.minor.y = element_blank(),
     axis.text.x = element_text(angle = 45, hjust = 1),
-    panel.spacing.y = unit(2, "lines") # Add vertical spacing between sex groups
+    panel.spacing.y = unit(2, "lines"), # Add vertical spacing between sex groups
+    axis.title.y = element_text(margin = margin(r = 15)),
+    axis.title.x = element_text(margin = margin(t = 15))
   )
 
 # Print the final plot
@@ -1736,21 +1781,21 @@ calculate_weighted_nb <- function(data, estimate, truth, wt, thresholds) {
   estimate_col <- enquo(estimate)
   truth_col <- enquo(truth)
   wt_col <- enquo(wt)
-
+  
   # Prepare the data once
   df <- data %>%
     select(!!estimate_col, !!truth_col, !!wt_col) %>%
     mutate(truth_numeric = if_else(!!truth_col == "Deceased", 1, 0))
-
+  
   # Get the total sum of weights
   total_weight <- sum(df[[quo_name(wt_col)]], na.rm = TRUE)
-
+  
   # Use map_dfr to iterate over each threshold and calculate net benefit
   map_dfr(
     thresholds,
     ~ {
       pt <- .x # Current threshold
-
+      
       # Calculate weighted counts of TP and FP at the current threshold
       summary_df <- df %>%
         mutate(
@@ -1758,7 +1803,7 @@ calculate_weighted_nb <- function(data, estimate, truth, wt, thresholds) {
         ) %>%
         group_by(truth_numeric, is_positive) %>%
         summarise(sum_w = sum(!!wt_col, na.rm = TRUE), .groups = 'drop')
-
+      
       # Extract weighted TP and FP
       tp_w <- summary_df$sum_w[
         summary_df$truth_numeric == 1 & summary_df$is_positive == 1
@@ -1766,7 +1811,7 @@ calculate_weighted_nb <- function(data, estimate, truth, wt, thresholds) {
       fp_w <- summary_df$sum_w[
         summary_df$truth_numeric == 0 & summary_df$is_positive == 1
       ]
-
+      
       # Handle cases where there are no TPs or FPs
       if (length(tp_w) == 0) {
         tp_w <- 0
@@ -1774,11 +1819,11 @@ calculate_weighted_nb <- function(data, estimate, truth, wt, thresholds) {
       if (length(fp_w) == 0) {
         fp_w <- 0
       }
-
+      
       # Calculate net benefit
       net_benefit <- (tp_w / total_weight) -
         (fp_w / total_weight) * (pt / (1 - pt))
-
+      
       tibble(
         threshold = pt,
         net_benefit = net_benefit
@@ -1893,10 +1938,10 @@ weighted_dca_final_with_lines <- ggplot(
   labs(
     x = "Probability Threshold",
     y = "Net Benefit",
-    color = "Model"
+    color = ""
   ) +
   scale_color_lancet() +
-  theme_minimal(base_size = 14) +
+  theme_minimal(base_size = 16) +
   theme(legend.position = "top")
 
 # Print the final plot
@@ -1969,7 +2014,7 @@ nb_at_exact_cuts <- bind_rows(
 comparison_data_consistent <- nb_at_exact_cuts %>%
   select(threshold, model, net_benefit) %>%
   pivot_wider(names_from = model, values_from = net_benefit) %>%
-
+  
   # Scale by 10,000 to get values per 10,000 patients
   mutate(across(where(is.numeric) & !matches("threshold"), ~ .x * 10000)) %>%
   mutate(
@@ -1986,7 +2031,7 @@ comparison_data_consistent <- nb_at_exact_cuts %>%
     )
   ) %>%
   mutate(
-    difference1 = NEWS -  `XGB-EWS`,
+    difference1 = NEWS - `XGB-EWS`,
     difference2 = NEWS - `NEWS-Light`
   ) %>%
   select(
@@ -1996,7 +2041,7 @@ comparison_data_consistent <- nb_at_exact_cuts %>%
     NEWS,
     `NEWS-Light`,
     `DEWS`,
-     `XGB-EWS`,
+    `XGB-EWS`,
     difference1,
     difference2
   ) %>%
@@ -2021,7 +2066,7 @@ final_comparison_table <- comparison_data_consistent %>%
     `Treat None`,
     NEWS,
     `NEWS-Light`,
-     `XGB-EWS`,
+    `XGB-EWS`,
     difference1,
     difference2
   ) %>%
@@ -2036,7 +2081,7 @@ final_comparison_table <- comparison_data_consistent %>%
     `Treat None` = "Treat None",
     NEWS = "NEWS",
     `NEWS-Light` = "NEWS-Light",
-     `XGB-EWS` = "XGB-EWS",
+    `XGB-EWS` = "XGB-EWS",
     difference1 = "NEWS vs XGB-EWS",
     difference2 = "NEWS vs NEWS-Light"
   ) %>%
@@ -2058,7 +2103,7 @@ final_comparison_table <- comparison_data_consistent %>%
     columns = c(`Treat All`, `Treat None`, NEWS, `NEWS-Light`, `XGB-EWS`)
   ) %>%
   tab_spanner(
-    label = "Net Benefit Difference per 10 000",
+    label = "Net Benefit Difference per 10 000 Patients",
     columns = c(difference1, difference2)
   ) %>%
   tab_style(
@@ -2073,7 +2118,8 @@ final_comparison_table <- comparison_data_consistent %>%
 # Display the final, numerically consistent table
 final_comparison_table
 
-final_comparison_table |> gtsave("weights_final_comparison_table_lanc.docx")
+final_comparison_table |>
+  gtsave("weights_final_comparison_table_lanc_sept.docx")
 
 ################################################################################
 ########################## Create DCA for subgroups ############################
@@ -2087,10 +2133,10 @@ age_stratified_nb_exact <- map_dfr(
   age_groups,
   ~ {
     current_age_group <- .x
-
+    
     # Filter data for the current age group
     data_subset <- data %>% filter(Age_Group == current_age_group)
-
+    
     # Calculate the weighted prevalence and exact cut points for this age group
     prevalence <- weighted.mean(
       if_else(data_subset$Status24H == "Deceased", 1, 0),
@@ -2100,9 +2146,9 @@ age_stratified_nb_exact <- map_dfr(
     if (is.nan(prevalence) || prevalence == 0) {
       return(NULL)
     } # Skip if no events in subgroup
-
+    
     cut_points <- prevalence * c(1, 2, 4, 8, 10, 20, 30)
-
+    
     # Calculate Net Benefit for each model ONLY at the exact cut_points
     nb_current <- calculate_weighted_nb(
       data_subset,
@@ -2136,7 +2182,7 @@ age_stratified_nb_exact <- map_dfr(
       cut_points
     ) %>%
       mutate(model = "XGB-EWS")
-
+    
     nb_all <- tibble(
       threshold = cut_points,
       net_benefit = prevalence -
@@ -2148,7 +2194,7 @@ age_stratified_nb_exact <- map_dfr(
       net_benefit = 0,
       model = "Treat None"
     )
-
+    
     # Combine results for this age group and add the identifier
     bind_rows(nb_current, nb_light, nb_full, nb_xgb, nb_all, nb_none) %>%
       mutate(Age_Group = current_age_group)
@@ -2164,7 +2210,7 @@ final_age_stratified_table <- age_stratified_nb_exact %>%
   arrange(threshold, .by_group = TRUE) %>%
   select(threshold, model, net_benefit) %>%
   pivot_wider(names_from = model, values_from = net_benefit) %>%
-
+  
   # Scale by 10,000 to get values per 10,000 patients
   mutate(across(where(is.numeric) & !matches("threshold"), ~ .x * 10000)) %>%
   mutate(
@@ -2173,7 +2219,7 @@ final_age_stratified_table <- age_stratified_nb_exact %>%
         NEWS,
         `NEWS-Light`,
         `XGB-EWS`,
-        `DEWS`,
+        DEWS,
         `Treat All`,
         `Treat None`
       ),
@@ -2181,7 +2227,7 @@ final_age_stratified_table <- age_stratified_nb_exact %>%
     )
   ) %>%
   mutate(
-    difference1 = NEWS -  `XGB-EWS`,
+    difference1 = NEWS - `XGB-EWS`,
     difference2 = NEWS - `NEWS-Light`
   )
 
@@ -2218,7 +2264,7 @@ final_age_stratified_table_weights <- final_age_stratified_table %>%
     `Treat None` = "Treat None",
     NEWS = "NEWS",
     `NEWS-Light` = "NEWS-Light",
-     `XGB-EWS` = "XGB-EWS",
+    `XGB-EWS` = "XGB-EWS",
     difference1 = "NEWS vs. XGB-EWS",
     difference2 = "NEWS vs. NEWS-Light"
   ) %>%
@@ -2237,10 +2283,10 @@ final_age_stratified_table_weights <- final_age_stratified_table %>%
   ) %>%
   tab_spanner(
     label = "Net Benefit per 10 000 Patients",
-    columns = c(`Treat All`, `Treat None`, NEWS, `NEWS-Light`,  `XGB-EWS`)
+    columns = c(`Treat All`, `Treat None`, NEWS, `NEWS-Light`, `XGB-EWS`)
   ) %>%
   tab_spanner(
-    label = "Net Benefit Difference per 10 000",
+    label = "Net Benefit Difference per 10 000 Patients",
     columns = c(difference1, difference2)
   ) %>%
   tab_style(
@@ -2257,12 +2303,12 @@ final_age_stratified_table_weights <- final_age_stratified_table %>%
 final_age_stratified_table_weights
 
 final_age_stratified_table_weights |>
-  gtsave("weights_final_age_stratified_table.docx")
+  gtsave("weights_final_age_stratified_table_sept.docx")
 
 # Save all the metrics
 
 all_model_performance |>
-  write_parquet("weights_all_bootstrapped_metrics.parquet")
+  write_parquet("weights_all_bootstrapped_metrics_sept.parquet")
 
 
 # Evaluate the net benefit differences across departments
@@ -2277,24 +2323,24 @@ all_department_nb <- map_dfr(
   department_levels,
   ~ {
     current_department <- .x
-
+    
     # Filter data for the current department
     data_subset <- data %>% filter(Department_Name_Fac == current_department)
-
+    
     # Calculate the weighted prevalence and cut points for this department
     prevalence <- weighted.mean(
       if_else(data_subset$Status24H == "Deceased", 1, 0),
       w = data_subset$weights_new,
       na.rm = TRUE
     )
-
+    
     # Skip this department if there are no events (mortality)
     if (is.nan(prevalence) || prevalence == 0) {
       return(NULL)
     }
-
+    
     cut_points <- prevalence * c(1, 2, 4, 8, 10, 20, 30)
-
+    
     # c. Calculate Net Benefit for each model at the exact cut_points
     nb_current <- calculate_weighted_nb(
       data_subset,
@@ -2320,7 +2366,7 @@ all_department_nb <- map_dfr(
       cut_points
     ) %>%
       mutate(model = "XGB-EWS")
-
+    
     nb_all <- tibble(
       threshold = cut_points,
       net_benefit = prevalence -
@@ -2332,7 +2378,7 @@ all_department_nb <- map_dfr(
       net_benefit = 0,
       model = "Treat None"
     )
-
+    
     # Combine results for this department and add the identifier
     bind_rows(nb_current, nb_light, nb_xgb, nb_all, nb_none) %>%
       mutate(Department_Name_Fac = current_department) # Use the correct column name
@@ -2351,12 +2397,12 @@ final_department_table_data <- all_department_nb %>%
   pivot_wider(names_from = model, values_from = net_benefit) %>%
   mutate(across(where(is.numeric) & !matches("threshold"), ~ .x * 10000)) %>%
   mutate(across(
-    c(NEWS, `NEWS-Light`,  `XGB-EWS`, `Treat All`, `Treat None`),
+    c(NEWS, `NEWS-Light`, `XGB-EWS`, `Treat All`, `Treat None`),
     ~ round(.x, digits = 1),
     .names = "{.col}"
   )) %>%
   mutate(
-    difference1 = NEWS -  `XGB-EWS`,
+    difference1 = NEWS - `XGB-EWS`,
     difference2 = NEWS - `NEWS-Light`
   )
 
@@ -2384,7 +2430,7 @@ final_department_table <- final_department_table_data %>%
     `Treat None` = "Treat None",
     NEWS = "NEWS",
     `NEWS-Light` = "NEWS-Light",
-     `XGB-EWS` = "XGB-EWS",
+    `XGB-EWS` = "XGB-EWS",
     difference1 = "NEWS vs. XGB-EWS",
     difference2 = "NEWS vs. NEWS-Light"
   ) %>%
@@ -2402,10 +2448,10 @@ final_department_table <- final_department_table_data %>%
   ) %>%
   tab_spanner(
     label = "Net Benefit per 10 000 Patients",
-    columns = c(`Treat All`, `Treat None`, NEWS, `NEWS-Light`,  `XGB-EWS`)
+    columns = c(`Treat All`, `Treat None`, NEWS, `NEWS-Light`, `XGB-EWS`)
   ) %>%
   tab_spanner(
-    label = "Net Benefit Difference per 10 000",
+    label = "Net Benefit Difference per 10 000 Patients",
     columns = c(difference1, difference2)
   ) %>%
   tab_style(
@@ -2421,12 +2467,12 @@ final_department_table <- final_department_table_data %>%
 # Display the final stacked table
 final_department_table
 
-final_department_table |> gtsave("weights_dep_stratified_table.docx")
+final_department_table |> gtsave("weights_dep_stratified_table_sept.docx")
 
 
 # Now repeat this for males and females
 
-# Get the unique levels for Sex from the data ---
+# Get the unique levels for Sex from data ---
 sex_levels <- unique(data$Sex)
 
 
@@ -2435,24 +2481,24 @@ sex_stratified_nb_exact <- map_dfr(
   sex_levels,
   ~ {
     current_sex <- .x
-
+    
     # Filter data for the current sex
     data_subset <- data %>% filter(Sex == current_sex)
-
+    
     # Calculate the weighted prevalence and cut points for this subgroup
     prevalence <- weighted.mean(
       if_else(data_subset$Status24H == "Deceased", 1, 0),
       w = data_subset$weights_new,
       na.rm = TRUE
     )
-
+    
     # Skip this group if there are no events (mortality)
     if (is.nan(prevalence) || prevalence == 0) {
       return(NULL)
     }
-
+    
     cut_points <- prevalence * c(1, 2, 4, 8, 10, 20, 30)
-
+    
     # Calculate Net Benefit for each model at the exact cut_points
     nb_current <- calculate_weighted_nb(
       data_subset,
@@ -2478,7 +2524,7 @@ sex_stratified_nb_exact <- map_dfr(
       cut_points
     ) %>%
       mutate(model = "XGB-EWS")
-
+    
     nb_all <- tibble(
       threshold = cut_points,
       net_benefit = prevalence -
@@ -2490,7 +2536,7 @@ sex_stratified_nb_exact <- map_dfr(
       net_benefit = 0,
       model = "Treat None"
     )
-
+    
     # Combine results for this sex and add the identifier
     bind_rows(nb_current, nb_light, nb_xgb, nb_all, nb_none) %>%
       mutate(Sex = current_sex) # Add the Sex identifier
@@ -2509,11 +2555,11 @@ final_sex_table_data <- sex_stratified_nb_exact %>%
   pivot_wider(names_from = model, values_from = net_benefit) %>%
   mutate(across(where(is.numeric) & !matches("threshold"), ~ .x * 10000)) %>%
   mutate(across(
-    c(NEWS, `NEWS-Light`,  `XGB-EWS`, `Treat All`, `Treat None`),
+    c(NEWS, `NEWS-Light`, `XGB-EWS`, `Treat All`, `Treat None`),
     ~ round(.x, digits = 1)
   )) %>%
   mutate(
-    difference1 = NEWS -  `XGB-EWS`,
+    difference1 = NEWS - `XGB-EWS`,
     difference2 = NEWS - `NEWS-Light`
   )
 
@@ -2538,7 +2584,7 @@ final_sex_table <- final_sex_table_data %>%
     `Treat None` = "Treat None",
     NEWS = "NEWS",
     `NEWS-Light` = "NEWS-Light",
-     `XGB-EWS` = "XGB-EWS",
+    `XGB-EWS` = "XGB-EWS",
     difference1 = "NEWS vs. XGB-EWS",
     difference2 = "NEWS vs. NEWS-Light"
   ) %>%
@@ -2556,10 +2602,10 @@ final_sex_table <- final_sex_table_data %>%
   ) %>%
   tab_spanner(
     label = "Net Benefit per 10 000 Patients",
-    columns = c(`Treat All`, `Treat None`, NEWS, `NEWS-Light`,  `XGB-EWS`)
+    columns = c(`Treat All`, `Treat None`, NEWS, `NEWS-Light`, `XGB-EWS`)
   ) %>%
   tab_spanner(
-    label = "Net Benefit Difference per 10 000",
+    label = "Net Benefit Difference per 10 000 Patients",
     columns = c(difference1, difference2)
   ) %>%
   tab_style(
@@ -2575,10 +2621,10 @@ final_sex_table <- final_sex_table_data %>%
 # Display the final stacked table
 final_sex_table
 
-final_sex_table |> gtsave("weights_sex_stratified_table.docx")
+final_sex_table |> gtsave("weights_sex_stratified_table_sept.docx")
 
 
-#### For diagnosis categories
+# For diagnosis categories
 
 # Get the unique levels for Diagnosis_Category, filtering out any NA values
 diagnosis_levels <- unique(data$Diagnosis_Category[
@@ -2590,27 +2636,27 @@ diagnosis_stratified_nb_exact <- map_dfr(
   diagnosis_levels,
   ~ {
     current_category <- .x
-
+    
     # Filter data for the current diagnosis category
     data_subset <- data %>%
       filter(
         Diagnosis_Category == current_category & !is.na(Diagnosis_Category)
       )
-
+    
     # Calculate the weighted prevalence and cut points for this subgroup
     prevalence <- weighted.mean(
       if_else(data_subset$Status24H == "Deceased", 1, 0),
       w = data_subset$weights_new,
       na.rm = TRUE
     )
-
+    
     # Skip this group if there are no events (mortality)
     if (is.nan(prevalence) || prevalence == 0) {
       return(NULL)
     }
-
+    
     cut_points <- prevalence * c(1, 2, 4, 8, 10, 20, 30)
-
+    
     # Calculate Net Benefit for each model at the exact cut_points
     nb_current <- calculate_weighted_nb(
       data_subset,
@@ -2636,7 +2682,7 @@ diagnosis_stratified_nb_exact <- map_dfr(
       cut_points
     ) %>%
       mutate(model = "XGB-EWS")
-
+    
     nb_all <- tibble(
       threshold = cut_points,
       net_benefit = prevalence -
@@ -2648,7 +2694,7 @@ diagnosis_stratified_nb_exact <- map_dfr(
       net_benefit = 0,
       model = "Treat None"
     )
-
+    
     # Combine results for this category and add the identifier
     bind_rows(nb_current, nb_light, nb_xgb, nb_all, nb_none) %>%
       mutate(Diagnosis_Category = current_category)
@@ -2666,11 +2712,11 @@ final_diagnosis_table_data <- diagnosis_stratified_nb_exact %>%
   pivot_wider(names_from = model, values_from = net_benefit) %>%
   mutate(across(where(is.numeric) & !matches("threshold"), ~ .x * 10000)) %>%
   mutate(across(
-    c(NEWS, `NEWS-Light`,  `XGB-EWS`, `Treat All`, `Treat None`),
+    c(NEWS, `NEWS-Light`, `XGB-EWS`, `Treat All`, `Treat None`),
     ~ round(.x, digits = 1)
   )) %>%
   mutate(
-    difference1 = NEWS -  `XGB-EWS`,
+    difference1 = NEWS - `XGB-EWS`,
     difference2 = NEWS - `NEWS-Light`
   )
 
@@ -2707,10 +2753,10 @@ final_diagnosis_table <- final_diagnosis_table_data %>%
   ) %>%
   tab_spanner(
     label = "Net Benefit per 10,000 Patients",
-    columns = c(`Treat All`, `Treat None`, NEWS, `NEWS-Light`,  `XGB-EWS`)
+    columns = c(`Treat All`, `Treat None`, NEWS, `NEWS-Light`, `XGB-EWS`)
   ) %>%
   tab_spanner(
-    label = "Net Benefit Difference per 10,000",
+    label = "Net Benefit Difference per 10,000 Patients",
     columns = c(difference1, difference2)
   ) %>%
   tab_style(
@@ -2727,7 +2773,203 @@ final_diagnosis_table <- final_diagnosis_table_data %>%
 
 final_diagnosis_table
 
-final_diagnosis_table |> gtsave("weights_diagnoses_stratified_table.docx")
+final_diagnosis_table |> gtsave("weights_diagnoses_stratified_table_sept.docx")
+
+
+################################################################################
+########################## Create DCA for EWS Risk Groups ######################
+################################################################################
+
+data <- data |>
+  mutate(
+    EWS_Grouping = case_when(
+      EWS_score == 0 ~ "Admission EWS = 0",
+      EWS_score > 0 & EWS_score < 4 ~ "Admission EWS = 1 to 3",
+      EWS_score >= 4 ~ "Admission EWS >= 4"
+    )
+  ) |>
+  mutate_at(vars(EWS_Grouping), as.factor)
+
+# Get the unique EWS risk groups from  data
+ews_risk_groups <- unique(data$EWS_Grouping)
+
+# Loop over each EWS risk group to perform DCA at exact thresholds
+ews_risk_stratified_nb_exact <- map_dfr(
+  ews_risk_groups,
+  ~ {
+    current_ews_risk_group <- .x
+    
+    # Filter data for the current EWS risk group
+    data_subset <- data %>% filter(EWS_Grouping == current_ews_risk_group)
+    
+    # Calculate the weighted prevalence and exact cut points for this EWS risk group
+    prevalence <- weighted.mean(
+      if_else(data_subset$Status24H == "Deceased", 1, 0),
+      w = data_subset$weights_new,
+      na.rm = TRUE
+    )
+    if (is.nan(prevalence) || prevalence == 0) {
+      return(NULL)
+    } # Skip if no events in subgroup
+    
+    cut_points <- prevalence * c(1, 2, 4, 8, 10, 20, 30)
+    
+    # Calculate Net Benefit for each model ONLY at the exact cut_points
+    nb_current <- calculate_weighted_nb(
+      data_subset,
+      pred_current,
+      Status24H,
+      weights_new,
+      cut_points
+    ) %>%
+      mutate(model = "NEWS")
+    nb_light <- calculate_weighted_nb(
+      data_subset,
+      pred_light,
+      Status24H,
+      weights_new,
+      cut_points
+    ) %>%
+      mutate(model = "NEWS-Light")
+    nb_full <- calculate_weighted_nb(
+      data_subset,
+      pred_full,
+      Status24H,
+      weights_new,
+      cut_points
+    ) %>%
+      mutate(model = "DEWS")
+    nb_xgb <- calculate_weighted_nb(
+      data_subset,
+      pred_xgb,
+      Status24H,
+      weights_new,
+      cut_points
+    ) %>%
+      mutate(model = "XGB-EWS")
+    
+    nb_all <- tibble(
+      threshold = cut_points,
+      net_benefit = prevalence -
+        (1 - prevalence) * (cut_points / (1 - cut_points)),
+      model = "Treat All"
+    )
+    nb_none <- tibble(
+      threshold = cut_points,
+      net_benefit = 0,
+      model = "Treat None"
+    )
+    
+    # Combine results for this EWS risk group and add the identifier
+    bind_rows(nb_current, nb_light, nb_full, nb_xgb, nb_all, nb_none) %>%
+      mutate(EWS_Grouping = current_ews_risk_group)
+  },
+  .id = NULL
+)
+
+
+# Create the final table
+
+final_ews_risk_stratified_table <- ews_risk_stratified_nb_exact %>%
+  group_by(EWS_Grouping) %>%
+  arrange(threshold, .by_group = TRUE) %>%
+  select(threshold, model, net_benefit) %>%
+  pivot_wider(names_from = model, values_from = net_benefit) %>%
+  
+  # Scale by 10,000 to get values per 10,000 patients
+  mutate(across(where(is.numeric) & !matches("threshold"), ~ .x * 10000)) %>%
+  mutate(
+    across(
+      .cols = c(
+        NEWS,
+        `NEWS-Light`,
+        `XGB-EWS`,
+        DEWS,
+        `Treat All`,
+        `Treat None`
+      ),
+      .fns = ~ round(.x, digits = 1)
+    )
+  ) %>%
+  mutate(
+    difference1 = NEWS - `XGB-EWS`,
+    difference2 = NEWS - `NEWS-Light`
+  )
+
+# Calculate the color domain robustly before creating the table
+domain_range_ews <- range(
+  c(
+    final_ews_risk_stratified_table$difference1,
+    final_ews_risk_stratified_table$difference2
+  ),
+  na.rm = TRUE
+)
+
+final_ews_risk_stratified_table_weighted <- final_ews_risk_stratified_table %>%
+  select(
+    threshold,
+    `Treat All`,
+    `Treat None`,
+    NEWS,
+    `NEWS-Light`,
+    `XGB-EWS`,
+    difference1,
+    difference2
+  ) %>%
+  gt(groupname_col = "EWS_Grouping") %>%
+  tab_header(
+    title = "EWS Risk Group-Stratified Decision Curve Analysis",
+    subtitle = md(
+      "Net benefit differences at **exact** prevalence-based thresholds. **Values are per 10,000 patients.**"
+    )
+  ) %>%
+  cols_label(
+    threshold = "Risk Threshold",
+    `Treat All` = "Treat All",
+    `Treat None` = "Treat None",
+    NEWS = "NEWS",
+    `NEWS-Light` = "NEWS-Light",
+    `XGB-EWS` = "XGB-EWS",
+    difference1 = "NEWS vs. XGB-EWS",
+    difference2 = "NEWS vs. NEWS-Light"
+  ) %>%
+  # Format numbers with middle dot and space as thousands separator
+  fmt_number(
+    columns = threshold,
+    decimals = 4,
+    dec_mark = "·",
+    sep_mark = " "
+  ) %>%
+  fmt_number(
+    columns = where(is.numeric) & !matches("threshold"),
+    decimals = 1,
+    dec_mark = "·",
+    sep_mark = " "
+  ) %>%
+  tab_spanner(
+    label = "Net Benefit per 10 000 Patients",
+    columns = c(`Treat All`, `Treat None`, NEWS, `NEWS-Light`, `XGB-EWS`)
+  ) %>%
+  tab_spanner(
+    label = "Net Benefit Difference per 10 000 Patients",
+    columns = c(difference1, difference2)
+  ) %>%
+  tab_style(
+    style = cell_text(weight = "bold"),
+    locations = cells_body(columns = c(difference1, difference2))
+  ) %>%
+  tab_options(row_group.font.weight = "bold") %>%
+  tab_footnote(
+    footnote = "Positive indicates NEWS has higher net benefit; Negative indicates the comparator is better.",
+    locations = cells_column_spanners(spanners = contains("Difference"))
+  )
+
+# Display the final table
+final_ews_risk_stratified_table_weighted
+
+# Save the table
+final_ews_risk_stratified_table_weighted |>
+  gtsave("ews_risk_stratified_table_sept.docx")
 
 
 ##################
@@ -2766,7 +3008,7 @@ df <- df |>
   )
 
 
-missingness_table <- df %>% 
+missingness_table <- df %>%
   select(
     Age,
     Sex,
@@ -2801,7 +3043,7 @@ missingness_table <- df %>%
     values_to = "Missing_Count"
   ) %>%
   mutate(
-    Total_N = nrow(df), 
+    Total_N = nrow(df), # Replace with actual dataset name
     Missing_Percentage = (Missing_Count / Total_N) * 100,
     # Add polished variable names
     Variable_Label = case_when(
@@ -2875,7 +3117,7 @@ gtsave(missingness_table, "missingness_table.docx")
 #### FTE Analysis
 
 mults <- read_parquet(
-  "/home/alex/ews/NEWS2_Evaluation/full_ews_18m_imp.parquet"
+  "/home/alex/ews/NEWS2_Evaluation/full_ews_18m_imp_fte.parquet"
 )
 
 
@@ -3010,18 +3252,18 @@ hospital_time_savings <- mults %>%
   mutate(
     # Annual assessments per hospital over exact 5-year period
     mean_annual_assessments = total_assessments_hospital / exact_years,
-
+    
     # Annual time savings calculations
     annual_minutes_saved = mean_annual_assessments * time_saved_per_assessment,
     annual_hours_saved = annual_minutes_saved / 60,
-
+    
     # Danish FTE savings (37h/week = 1924h/year)
     danish_FTE_saved = annual_hours_saved / 1924,
-
+    
     # Monetary savings in EUR
     annual_money_saved_eur = danish_FTE_saved * annual_cost_per_fte_eur,
     annual_money_saved_million = annual_money_saved_eur / 1000000,
-
+    
     # Flag as individual hospital
     category = "Individual Hospital"
   ) %>%
@@ -3080,7 +3322,7 @@ plot_data <- hospital_time_savings %>%
       Hospital == "Regional Hospital System" ~ "Regional Hospital System",
       TRUE ~ str_wrap(Hospital, 30)
     ),
-
+    
     # Create labels for the bars
     bar_label = case_when(
       Hospital == "Regional Hospital System" ~
@@ -3098,7 +3340,7 @@ plot_data <- hospital_time_savings %>%
           "M EUR"
         )
     ),
-
+    
     # Order hospitals by FTE savings, but put Regional Hospital System at the top
     Hospital_ordered = case_when(
       Hospital == "Regional Hospital System" ~ paste0("0_", Hospital),
@@ -3192,13 +3434,127 @@ combined_plot <- plot_data_clean %>%
 
 combined_plot
 
-# Using the pmsampsize package to showcase the sample size requirements
+setwd("/home/alex/ews/NEWS2_Evaluation/Modelling/Plots_Latest")
 
-sample_size_cstat <- pmsampsize(
-  type = "b",
-  cstatistic = 0.8,
-  parameters = 100,
-  prevalence = 0.0022
-)
 
-print(sample_size_cstat)
+# Prepare data for visualization (money removed)
+plot_data <- hospital_time_savings %>%
+  select(
+    Hospital,
+    mean_annual_assessments,
+    danish_FTE_saved,
+    category
+  ) %>%
+  bind_rows(
+    tibble(
+      Hospital = "Regional Hospital System",
+      mean_annual_assessments = system_totals$total_annual_assessments,
+      danish_FTE_saved = system_totals$total_FTE_saved,
+      category = "System Total"
+    )
+  ) %>%
+  mutate(
+    # Create display labels
+    Hospital_display = case_when(
+      Hospital == "Regional Hospital System" ~ "Regional Hospital System",
+      TRUE ~ str_wrap(Hospital, 30)
+    ),
+    # Create labels for the bars (FTE only, no EUR)
+    bar_label = paste0(round(danish_FTE_saved, 1), " FTE"),
+    
+    # Order hospitals by FTE savings, but put Regional Hospital System at the top
+    Hospital_ordered = case_when(
+      Hospital == "Regional Hospital System" ~ paste0("0_", Hospital),
+      TRUE ~ paste0("1_", Hospital)
+    )
+  ) %>%
+  arrange(desc(Hospital_ordered), desc(danish_FTE_saved)) %>%
+  mutate(
+    Hospital_display = factor(Hospital_display, levels = Hospital_display)
+  )
+
+# Lancet-style formatting function for consistent number display
+format_lancet <- function(x, digits = 0) {
+  format(
+    round(x, digits),
+    big.mark = " ",
+    decimal.mark = "·",
+    scientific = FALSE
+  )
+}
+
+# Clean hospital labels and reorder by FTE saved (descending)
+plot_data_clean <- plot_data %>%
+  mutate(
+    Hospital_display = case_when(
+      str_detect(Hospital_display, "HGH.*Herlev.*Gentofte") ~
+        "Herlev and Gentofte Hospital",
+      str_detect(Hospital_display, "Bornholm's Hospital") ~
+        "Hospital of Bornholm",
+      str_detect(Hospital_display, "Zealands.*University.*Hospital") ~
+        "Zealand University Hospital",
+      str_detect(Hospital_display, "NOH.*North Zealand") ~
+        "Hospital of North Zealand",
+      TRUE ~ str_replace_all(Hospital_display, "Sygehus", "Hospital")
+    )
+  ) %>%
+  arrange(danish_FTE_saved) %>%
+  mutate(Hospital_display = factor(Hospital_display, levels = Hospital_display))
+
+combined_plot <- plot_data_clean %>%
+  ggplot(aes(x = Hospital_display, y = danish_FTE_saved, fill = category)) +
+  geom_col(alpha = 0.8, width = 0.7) +
+  geom_text(
+    aes(label = str_replace_all(bar_label, "\\.", "·")),
+    hjust = -0.05,
+    size = 3.2,
+    fontface = "bold",
+    color = "black"
+  ) +
+  geom_hline(yintercept = 0, color = "black", linewidth = 0.5) +
+  geom_hline(
+    aes(yintercept = ifelse(Hospital == "Regional Hospital System", -0.5, NA)),
+    color = "gray60",
+    linewidth = 0.8,
+    alpha = 0.7
+  ) +
+  coord_flip() +
+  scale_fill_manual(
+    values = c("Individual Hospital" = "#A23B72", "System Total" = "#2E86AB"),
+    guide = "none"
+  ) +
+  labs(
+    x = NULL,
+    y = "FTE Saved Annually using NEWS-Light"
+  ) +
+  theme_minimal(base_size = 16) +
+  theme(
+    plot.title = element_text(
+      size = 16,
+      face = "bold",
+      margin = margin(b = 10)
+    ),
+    plot.subtitle = element_text(
+      size = 13,
+      color = "gray40",
+      margin = margin(b = 15)
+    ),
+    axis.text.y = element_text(size = 12, color = "gray20"),
+    axis.text.x = element_text(size = 11, color = "gray20"),
+    axis.title.x = element_text(
+      size = 12,
+      color = "gray20",
+      margin = margin(t = 10)
+    ),
+    panel.grid.major.y = element_blank(),
+    panel.grid.minor = element_blank(),
+    panel.grid.major.x = element_line(color = "gray90", linewidth = 0.3),
+    plot.margin = margin(15, 15, 15, 15)
+  ) +
+  scale_y_continuous(
+    expand = expansion(mult = c(0, 0.15)),
+    breaks = scales::pretty_breaks(n = 6),
+    labels = function(x) format_lancet(x, digits = 1)
+  )
+
+combined_plot

@@ -716,7 +716,7 @@ aggregated_diagnoses <- diag_before_ews |>
   ) |>
   rename(CSN = CSN_ews)
 
-# Step 6: Join the aggregated diagnoses to your main df
+# Step 6: Join the aggregated diagnoses to main df
 df <- df |>
   left_join(aggregated_diagnoses, by = "CSN") |>
   mutate(Aggregated_Diagnoses = replace_na(Aggregated_Diagnoses, "Ingen"))
