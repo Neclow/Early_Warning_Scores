@@ -25,6 +25,8 @@
         -   AUC, Brier Score, Calibration, Net Benefit (Differences)
     -   `M2V_Embeddings.ipynb` :
         -   Contains python code for generating the full embeddings + PCA for dimensionality reduction
+    -   `Sensitivity_Embeddings.ipynb` :
+        -   Contains python code for generating the full embeddings + PCA for dimensionality reduction using a bigger sentence transformer of 560M parameters with instruction (multilingual-e5-large-instruct)
 
 -   **Accomplished stuff:**
 
