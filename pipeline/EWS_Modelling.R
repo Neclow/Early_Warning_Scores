@@ -55,7 +55,7 @@ theme_lancet <- function(base_size = 14, base_family = "") {
         color = "gray40",
         margin = margin(b = 15)
       ),
-      
+
       # Axis text and titles
       axis.text.y = element_text(size = base_size - 2, color = "gray20"),
       axis.text.x = element_text(size = base_size - 3, color = "gray20"),
@@ -69,20 +69,20 @@ theme_lancet <- function(base_size = 14, base_family = "") {
         color = "gray20",
         margin = margin(r = 10)
       ),
-      
+
       # Grid lines - minimal and subtle
       panel.grid.major.y = element_blank(),
       panel.grid.minor = element_blank(),
       panel.grid.major.x = element_line(color = "gray90", linewidth = 0.3),
-      
+
       # Legend
       legend.text = element_text(size = base_size - 3),
       legend.title = element_text(size = base_size - 2, face = "bold"),
       legend.margin = margin(5, 5, 5, 5),
-      
+
       # Plot margins
       plot.margin = margin(15, 15, 15, 15),
-      
+
       # Strip text for facets
       strip.text = element_text(size = base_size - 2, face = "bold"),
       strip.background = element_rect(fill = "gray95", color = NA)
@@ -160,8 +160,6 @@ library(ggridges) # For plotting
 library(scales) # GGplot modification
 library(WeightIt) # Weighting methods
 library(cobalt) # Balance checking
-library(gtsummary) # For summary tables
-library(survey) # For weights
 library(gt) # For summary tables
 library(gtsummary) # For tables
 library(survey) # For weights
@@ -214,43 +212,43 @@ specialty_categories <- list(
     "Urologi",
     "Øre-næse-hals"
   ),
-  
+
   "Cardiopulmonary" = c("Kardiologi", "Lungesygdomme"),
-  
+
   "Gastroenterology" = c("Medicinsk gastroenterologi", "Hepatologi"),
-  
+
   "Neurology" = c("Neurologi"),
-  
+
   "Oncology & Hematology" = c(
     "Onkologi",
     "Hæmatologi",
     "Hæmatologi-onkologi pædiatrisk"
   ),
-  
+
   "Endocrinology & Metabolism" = c("Endokrinologi"),
-  
+
   "Nephrology" = c("Nefrologi"),
-  
+
   "Infectious Disease" = c("Infektionsmedicin"),
-  
+
   "Dermatology" = c("Dermatologi"),
-  
+
   "Rheumatology" = c("Reumatologi"),
-  
+
   "Geriatrics & Palliative" = c("Geriatri", "Palliation"),
-  
+
   "Pediatrics" = c("Pædiatri"),
-  
+
   "Internal & Acute Medicine" = c("Intern medicin", "Akutmedicin"),
-  
+
   "Critical Care" = c("Anæstesiologi", "Intensiv terapi"),
-  
+
   "Psychiatry" = c("Psykiatri"),
-  
+
   "Rehabilitation" = c("Rehabilitering"),
-  
+
   "Ophthalmology" = c("Oftalmologi"),
-  
+
   "Other" = c("Ikke-klinisk speciale", "NULL")
 )
 
@@ -805,16 +803,16 @@ calculate_overall_bootstrap_ci <- function(
       weights_new = original_data$weights_new,
       mort24H = if_else(Status24H == "Deceased", 1, 0)
     )
-  
+
   # Perform Bootstrapping
   set.seed(42)
-  
+
   boot_results <- map_dfr(
     1:n_bootstrap,
     ~ {
       boot_indices <- sample(1:nrow(preds_df), nrow(preds_df), replace = TRUE)
       boot_sample <- preds_df[boot_indices, ]
-      
+
       auc_val <- MetricsWeighted::AUC(
         actual = boot_sample$mort24H,
         predicted = boot_sample$.pred_Deceased,
@@ -825,7 +823,7 @@ calculate_overall_bootstrap_ci <- function(
         predicted = boot_sample$.pred_Deceased,
         w = boot_sample$weights_new
       )
-      
+
       # Return a one-row tibble for this iteration.
       tibble(
         bootstrap_id = .x,
@@ -834,7 +832,7 @@ calculate_overall_bootstrap_ci <- function(
       )
     }
   )
-  
+
   # Summarize Bootstrap Results
   summary_metrics <- boot_results %>%
     # Pivot to a long format for easy summarization by metric.
@@ -851,7 +849,7 @@ calculate_overall_bootstrap_ci <- function(
       .n = n()
     ) %>%
     mutate(model = model_name)
-  
+
   return(summary_metrics)
 }
 
@@ -973,10 +971,10 @@ calculate_metrics_by_hospital_with_bootstrap_ci_refactored <- function(
       }
     )
   }
-  
+
   # Set a single seed for reproducibility of the entire process
   set.seed(42)
-  
+
   # Prepare the initial predictions data
   preds_data <- fit_object %>%
     collect_predictions() %>%
@@ -986,19 +984,19 @@ calculate_metrics_by_hospital_with_bootstrap_ci_refactored <- function(
       Hospital = data$Hospital,
       weights_new = data$weights_new
     )
-  
+
   metrics_by_hospital <- preds_data %>%
     group_by(Hospital) %>%
     nest() %>% # Creates a list-column 'data' containing the data for each hospital
     mutate(
       n_patients = map_int(data, nrow),
-      
+
       # Calculate point estimates
       point_estimates = map(data, calculate_metrics_on_sample),
-      
+
       # Generate bootstrap resamples using rsample
       boot_samples = map(data, ~ rsample::bootstraps(.x, times = n_bootstrap)),
-      
+
       # Calculate metrics on each bootstrap sample
       boot_metrics = map(
         boot_samples,
@@ -1014,7 +1012,7 @@ calculate_metrics_by_hospital_with_bootstrap_ci_refactored <- function(
             unnest(metrics)
         }
       ),
-      
+
       # Summarize bootstrap results to get percentile confidence intervals
       conf_intervals = map(
         boot_metrics,
@@ -1033,7 +1031,7 @@ calculate_metrics_by_hospital_with_bootstrap_ci_refactored <- function(
         }
       )
     ) %>%
-    
+
     # Unnest and format the final results table
     select(Hospital, n_patients, point_estimates, conf_intervals) %>%
     unnest(c(point_estimates, conf_intervals)) %>%
@@ -1047,7 +1045,7 @@ calculate_metrics_by_hospital_with_bootstrap_ci_refactored <- function(
     ) %>%
     mutate(model = model_name) %>%
     arrange(desc(n_patients))
-  
+
   return(metrics_by_hospital)
 }
 
@@ -1335,7 +1333,7 @@ create_weighted_decile_data <- function(data, truth, estimate, wt) {
   truth_col <- enquo(truth)
   estimate_col <- enquo(estimate)
   wt_col <- enquo(wt)
-  
+
   # Prepare the data by creating the outcome and decile groups
   binned_data <- data %>%
     mutate(
@@ -1343,7 +1341,7 @@ create_weighted_decile_data <- function(data, truth, estimate, wt) {
       decile = ntile({{ estimate }}, 10) # Create 10 decile groups
     ) %>%
     group_by(decile)
-  
+
   # Calculate the straightforward weighted mean of the predictions in each decile
   mean_predictions <- binned_data %>%
     summarise(
@@ -1354,7 +1352,7 @@ create_weighted_decile_data <- function(data, truth, estimate, wt) {
       ),
       .groups = 'drop'
     )
-  
+
   # Second, calculate the weighted observed frequency and its confidence interval
   observed_frequencies <- binned_data %>%
     group_modify(
@@ -1376,7 +1374,7 @@ create_weighted_decile_data <- function(data, truth, estimate, wt) {
         )
       }
     )
-  
+
   # Join the two summaries back together
   left_join(mean_predictions, observed_frequencies, by = "decile")
 }
@@ -1492,13 +1490,13 @@ create_grouped_decile_data <- function(data, truth, estimate, wt, ...) {
   truth_col <- enquo(truth)
   estimate_col <- enquo(estimate)
   wt_col <- enquo(wt)
-  
+
   binned_data <- data %>%
     mutate(truth_numeric = if_else(!!truth_col == "Deceased", 1, 0)) %>%
     group_by(!!!grouping_vars) %>%
     mutate(decile = ntile(!!estimate_col, 10)) %>%
     group_by(!!!grouping_vars, decile) # Regroup with deciles for summarization
-  
+
   # Calculate the weighted mean of predictions
   mean_predictions <- binned_data %>%
     summarise(
@@ -1509,7 +1507,7 @@ create_grouped_decile_data <- function(data, truth, estimate, wt, ...) {
       ),
       .groups = 'drop'
     )
-  
+
   # Calculate weighted observed frequency and CI using the survey package
   observed_frequencies <- binned_data %>%
     group_modify(
@@ -1529,7 +1527,7 @@ create_grouped_decile_data <- function(data, truth, estimate, wt, ...) {
       },
       .keep = TRUE
     ) # .keep = TRUE retains grouping variables
-  
+
   # Join the summaries
   left_join(
     mean_predictions,
@@ -1781,21 +1779,21 @@ calculate_weighted_nb <- function(data, estimate, truth, wt, thresholds) {
   estimate_col <- enquo(estimate)
   truth_col <- enquo(truth)
   wt_col <- enquo(wt)
-  
+
   # Prepare the data once
   df <- data %>%
     select(!!estimate_col, !!truth_col, !!wt_col) %>%
     mutate(truth_numeric = if_else(!!truth_col == "Deceased", 1, 0))
-  
+
   # Get the total sum of weights
   total_weight <- sum(df[[quo_name(wt_col)]], na.rm = TRUE)
-  
+
   # Use map_dfr to iterate over each threshold and calculate net benefit
   map_dfr(
     thresholds,
     ~ {
       pt <- .x # Current threshold
-      
+
       # Calculate weighted counts of TP and FP at the current threshold
       summary_df <- df %>%
         mutate(
@@ -1803,7 +1801,7 @@ calculate_weighted_nb <- function(data, estimate, truth, wt, thresholds) {
         ) %>%
         group_by(truth_numeric, is_positive) %>%
         summarise(sum_w = sum(!!wt_col, na.rm = TRUE), .groups = 'drop')
-      
+
       # Extract weighted TP and FP
       tp_w <- summary_df$sum_w[
         summary_df$truth_numeric == 1 & summary_df$is_positive == 1
@@ -1811,7 +1809,7 @@ calculate_weighted_nb <- function(data, estimate, truth, wt, thresholds) {
       fp_w <- summary_df$sum_w[
         summary_df$truth_numeric == 0 & summary_df$is_positive == 1
       ]
-      
+
       # Handle cases where there are no TPs or FPs
       if (length(tp_w) == 0) {
         tp_w <- 0
@@ -1819,11 +1817,11 @@ calculate_weighted_nb <- function(data, estimate, truth, wt, thresholds) {
       if (length(fp_w) == 0) {
         fp_w <- 0
       }
-      
+
       # Calculate net benefit
       net_benefit <- (tp_w / total_weight) -
         (fp_w / total_weight) * (pt / (1 - pt))
-      
+
       tibble(
         threshold = pt,
         net_benefit = net_benefit
@@ -2014,7 +2012,7 @@ nb_at_exact_cuts <- bind_rows(
 comparison_data_consistent <- nb_at_exact_cuts %>%
   select(threshold, model, net_benefit) %>%
   pivot_wider(names_from = model, values_from = net_benefit) %>%
-  
+
   # Scale by 10,000 to get values per 10,000 patients
   mutate(across(where(is.numeric) & !matches("threshold"), ~ .x * 10000)) %>%
   mutate(
@@ -2133,10 +2131,10 @@ age_stratified_nb_exact <- map_dfr(
   age_groups,
   ~ {
     current_age_group <- .x
-    
+
     # Filter data for the current age group
     data_subset <- data %>% filter(Age_Group == current_age_group)
-    
+
     # Calculate the weighted prevalence and exact cut points for this age group
     prevalence <- weighted.mean(
       if_else(data_subset$Status24H == "Deceased", 1, 0),
@@ -2146,9 +2144,9 @@ age_stratified_nb_exact <- map_dfr(
     if (is.nan(prevalence) || prevalence == 0) {
       return(NULL)
     } # Skip if no events in subgroup
-    
+
     cut_points <- prevalence * c(1, 2, 4, 8, 10, 20, 30)
-    
+
     # Calculate Net Benefit for each model ONLY at the exact cut_points
     nb_current <- calculate_weighted_nb(
       data_subset,
@@ -2182,7 +2180,7 @@ age_stratified_nb_exact <- map_dfr(
       cut_points
     ) %>%
       mutate(model = "XGB-EWS")
-    
+
     nb_all <- tibble(
       threshold = cut_points,
       net_benefit = prevalence -
@@ -2194,7 +2192,7 @@ age_stratified_nb_exact <- map_dfr(
       net_benefit = 0,
       model = "Treat None"
     )
-    
+
     # Combine results for this age group and add the identifier
     bind_rows(nb_current, nb_light, nb_full, nb_xgb, nb_all, nb_none) %>%
       mutate(Age_Group = current_age_group)
@@ -2210,7 +2208,7 @@ final_age_stratified_table <- age_stratified_nb_exact %>%
   arrange(threshold, .by_group = TRUE) %>%
   select(threshold, model, net_benefit) %>%
   pivot_wider(names_from = model, values_from = net_benefit) %>%
-  
+
   # Scale by 10,000 to get values per 10,000 patients
   mutate(across(where(is.numeric) & !matches("threshold"), ~ .x * 10000)) %>%
   mutate(
@@ -2323,24 +2321,24 @@ all_department_nb <- map_dfr(
   department_levels,
   ~ {
     current_department <- .x
-    
+
     # Filter data for the current department
     data_subset <- data %>% filter(Department_Name_Fac == current_department)
-    
+
     # Calculate the weighted prevalence and cut points for this department
     prevalence <- weighted.mean(
       if_else(data_subset$Status24H == "Deceased", 1, 0),
       w = data_subset$weights_new,
       na.rm = TRUE
     )
-    
+
     # Skip this department if there are no events (mortality)
     if (is.nan(prevalence) || prevalence == 0) {
       return(NULL)
     }
-    
+
     cut_points <- prevalence * c(1, 2, 4, 8, 10, 20, 30)
-    
+
     # c. Calculate Net Benefit for each model at the exact cut_points
     nb_current <- calculate_weighted_nb(
       data_subset,
@@ -2366,7 +2364,7 @@ all_department_nb <- map_dfr(
       cut_points
     ) %>%
       mutate(model = "XGB-EWS")
-    
+
     nb_all <- tibble(
       threshold = cut_points,
       net_benefit = prevalence -
@@ -2378,7 +2376,7 @@ all_department_nb <- map_dfr(
       net_benefit = 0,
       model = "Treat None"
     )
-    
+
     # Combine results for this department and add the identifier
     bind_rows(nb_current, nb_light, nb_xgb, nb_all, nb_none) %>%
       mutate(Department_Name_Fac = current_department) # Use the correct column name
@@ -2481,24 +2479,24 @@ sex_stratified_nb_exact <- map_dfr(
   sex_levels,
   ~ {
     current_sex <- .x
-    
+
     # Filter data for the current sex
     data_subset <- data %>% filter(Sex == current_sex)
-    
+
     # Calculate the weighted prevalence and cut points for this subgroup
     prevalence <- weighted.mean(
       if_else(data_subset$Status24H == "Deceased", 1, 0),
       w = data_subset$weights_new,
       na.rm = TRUE
     )
-    
+
     # Skip this group if there are no events (mortality)
     if (is.nan(prevalence) || prevalence == 0) {
       return(NULL)
     }
-    
+
     cut_points <- prevalence * c(1, 2, 4, 8, 10, 20, 30)
-    
+
     # Calculate Net Benefit for each model at the exact cut_points
     nb_current <- calculate_weighted_nb(
       data_subset,
@@ -2524,7 +2522,7 @@ sex_stratified_nb_exact <- map_dfr(
       cut_points
     ) %>%
       mutate(model = "XGB-EWS")
-    
+
     nb_all <- tibble(
       threshold = cut_points,
       net_benefit = prevalence -
@@ -2536,7 +2534,7 @@ sex_stratified_nb_exact <- map_dfr(
       net_benefit = 0,
       model = "Treat None"
     )
-    
+
     # Combine results for this sex and add the identifier
     bind_rows(nb_current, nb_light, nb_xgb, nb_all, nb_none) %>%
       mutate(Sex = current_sex) # Add the Sex identifier
@@ -2636,27 +2634,27 @@ diagnosis_stratified_nb_exact <- map_dfr(
   diagnosis_levels,
   ~ {
     current_category <- .x
-    
+
     # Filter data for the current diagnosis category
     data_subset <- data %>%
       filter(
         Diagnosis_Category == current_category & !is.na(Diagnosis_Category)
       )
-    
+
     # Calculate the weighted prevalence and cut points for this subgroup
     prevalence <- weighted.mean(
       if_else(data_subset$Status24H == "Deceased", 1, 0),
       w = data_subset$weights_new,
       na.rm = TRUE
     )
-    
+
     # Skip this group if there are no events (mortality)
     if (is.nan(prevalence) || prevalence == 0) {
       return(NULL)
     }
-    
+
     cut_points <- prevalence * c(1, 2, 4, 8, 10, 20, 30)
-    
+
     # Calculate Net Benefit for each model at the exact cut_points
     nb_current <- calculate_weighted_nb(
       data_subset,
@@ -2682,7 +2680,7 @@ diagnosis_stratified_nb_exact <- map_dfr(
       cut_points
     ) %>%
       mutate(model = "XGB-EWS")
-    
+
     nb_all <- tibble(
       threshold = cut_points,
       net_benefit = prevalence -
@@ -2694,7 +2692,7 @@ diagnosis_stratified_nb_exact <- map_dfr(
       net_benefit = 0,
       model = "Treat None"
     )
-    
+
     # Combine results for this category and add the identifier
     bind_rows(nb_current, nb_light, nb_xgb, nb_all, nb_none) %>%
       mutate(Diagnosis_Category = current_category)
@@ -2798,10 +2796,10 @@ ews_risk_stratified_nb_exact <- map_dfr(
   ews_risk_groups,
   ~ {
     current_ews_risk_group <- .x
-    
+
     # Filter data for the current EWS risk group
     data_subset <- data %>% filter(EWS_Grouping == current_ews_risk_group)
-    
+
     # Calculate the weighted prevalence and exact cut points for this EWS risk group
     prevalence <- weighted.mean(
       if_else(data_subset$Status24H == "Deceased", 1, 0),
@@ -2811,9 +2809,9 @@ ews_risk_stratified_nb_exact <- map_dfr(
     if (is.nan(prevalence) || prevalence == 0) {
       return(NULL)
     } # Skip if no events in subgroup
-    
+
     cut_points <- prevalence * c(1, 2, 4, 8, 10, 20, 30)
-    
+
     # Calculate Net Benefit for each model ONLY at the exact cut_points
     nb_current <- calculate_weighted_nb(
       data_subset,
@@ -2847,7 +2845,7 @@ ews_risk_stratified_nb_exact <- map_dfr(
       cut_points
     ) %>%
       mutate(model = "XGB-EWS")
-    
+
     nb_all <- tibble(
       threshold = cut_points,
       net_benefit = prevalence -
@@ -2859,7 +2857,7 @@ ews_risk_stratified_nb_exact <- map_dfr(
       net_benefit = 0,
       model = "Treat None"
     )
-    
+
     # Combine results for this EWS risk group and add the identifier
     bind_rows(nb_current, nb_light, nb_full, nb_xgb, nb_all, nb_none) %>%
       mutate(EWS_Grouping = current_ews_risk_group)
@@ -2875,7 +2873,7 @@ final_ews_risk_stratified_table <- ews_risk_stratified_nb_exact %>%
   arrange(threshold, .by_group = TRUE) %>%
   select(threshold, model, net_benefit) %>%
   pivot_wider(names_from = model, values_from = net_benefit) %>%
-  
+
   # Scale by 10,000 to get values per 10,000 patients
   mutate(across(where(is.numeric) & !matches("threshold"), ~ .x * 10000)) %>%
   mutate(
@@ -3252,18 +3250,18 @@ hospital_time_savings <- mults %>%
   mutate(
     # Annual assessments per hospital over exact 5-year period
     mean_annual_assessments = total_assessments_hospital / exact_years,
-    
+
     # Annual time savings calculations
     annual_minutes_saved = mean_annual_assessments * time_saved_per_assessment,
     annual_hours_saved = annual_minutes_saved / 60,
-    
+
     # Danish FTE savings (37h/week = 1924h/year)
     danish_FTE_saved = annual_hours_saved / 1924,
-    
+
     # Monetary savings in EUR
     annual_money_saved_eur = danish_FTE_saved * annual_cost_per_fte_eur,
     annual_money_saved_million = annual_money_saved_eur / 1000000,
-    
+
     # Flag as individual hospital
     category = "Individual Hospital"
   ) %>%
@@ -3322,7 +3320,7 @@ plot_data <- hospital_time_savings %>%
       Hospital == "Regional Hospital System" ~ "Regional Hospital System",
       TRUE ~ str_wrap(Hospital, 30)
     ),
-    
+
     # Create labels for the bars
     bar_label = case_when(
       Hospital == "Regional Hospital System" ~
@@ -3340,7 +3338,7 @@ plot_data <- hospital_time_savings %>%
           "M EUR"
         )
     ),
-    
+
     # Order hospitals by FTE savings, but put Regional Hospital System at the top
     Hospital_ordered = case_when(
       Hospital == "Regional Hospital System" ~ paste0("0_", Hospital),
@@ -3461,7 +3459,7 @@ plot_data <- hospital_time_savings %>%
     ),
     # Create labels for the bars (FTE only, no EUR)
     bar_label = paste0(round(danish_FTE_saved, 1), " FTE"),
-    
+
     # Order hospitals by FTE savings, but put Regional Hospital System at the top
     Hospital_ordered = case_when(
       Hospital == "Regional Hospital System" ~ paste0("0_", Hospital),
