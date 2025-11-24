@@ -36,11 +36,12 @@ All main scripts can be found in the `pipeline` directory:
 - `EWS_Modelling.R`: comparison of various models and algorithms for early
   warning systems
   - Implementation of the weighting model (CBPS) for the individuals
-  - 🔗 NEWS:
-    (<https://www.england.nhs.uk/ourwork/clinical-policy/sepsis/nationalearlywarningscore/>)
+  - 🔗
+    [NEWS](https://www.england.nhs.uk/ourwork/clinical-policy/sepsis/nationalearlywarningscore)
+    (National Early Warning Score)
   - 🔗 NEWS-Light: NEWS2 - Blood Pressure - Temperature
-  - 🔗 DEWS: NEWS2-Light + Age + Sex
-    (<https://journals.lww.com/ccmjournal/fulltext/2023/07000/development_and_external_validation_of_the.4.aspx>)
+  - 🔗 [DEWS](http://doi.org/10.1097/CCM.0000000000005842) (Demographic Early
+    Warning Score): NEWS2-Light + Age + Sex
   - 🔗 XGB-EWS: Age + Sex + Vital Signs + Number of Previous Hospitalizations +
     Embeddings of Previous Medical Procedures and Diagnoses + historical
     averages of blood test values + time-related recording information
@@ -54,20 +55,19 @@ All main scripts can be found in the `pipeline` directory:
 
 ### EWS models
 
-- XGBoost (<https://xgboost.readthedocs.io/en/stable/>)
-- Logistic regression
-  (<https://parsnip.tidymodels.org/reference/logistic_reg.html>)
+- [XGBoost](https://xgboost.readthedocs.io/en/stable)
+- [Logistic regression](https://parsnip.tidymodels.org/reference/logistic_reg.html)
 
 ### Embedding models
 
 - Static embeddings of medical procedures/diagnoses trajectories using
-  model2vec's (<https://github.com/MinishLab/model2vec>) most recent
-  multilingual model
-  (<https://huggingface.co/minishlab/potion-multilingual-128M>)
+  [model2vec](https://github.com/MinishLab/model2vec)'s
+  [potion-multilingual-128M](https://huggingface.co/minishlab/potion-multilingual-128M)
+  model
 - Logistic regression for Covariate Balancing Propensity Score (CBPS) using the
-  weightit R package (<https://ngreifer.github.io/WeightIt/>)
-- Sensitivity analysis using a bigger 560M param sentence transformer with
-  instruction: <https://huggingface.co/intfloat/multilingual-e5-large-instruct>
+  [weightit](https://ngreifer.github.io/WeightIt) R package
+- Sensitivity analysis using the
+  [e5-large-instruct](multilingual-e5-large-instruct) sentence Transformer
 
 ## Summary
 
