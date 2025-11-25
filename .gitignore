@@ -394,15 +394,10 @@ Temporary Items
 # Neil's drafts
 drafts*.ipynb
 tmp*.ipynb
+tmp/
 
 # Private data
 private_data/
 
 # Private results
 private_results/
-
-# All notebooks
-*.ipynb
-
-# catboost
-catboost_info/
