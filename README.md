@@ -1,43 +1,67 @@
 # Development and validation of EWS systems 🚑
 
+## Installation
+
+Install [pixi](https://pixi.sh/latest/installation) to install the dependencies
+necessary to run the project.
+
+Once pixi is installed, clone the repository and run the following inside the
+project directory:
+
+```bash
+# Install all pixi-friendly dependencies
+pixi install
+# Install missing R dependencies
+pixi run post_install
+```
+
+To run the python notebooks, it is recommended to install cuda 12.6. After
+installation, verify GPU availability in PyTorch:
+
+```python
+import torch
+print(torch.cuda.is_available())
+```
+
 ## Contents
 
--   `preprocessing`
+All main scripts can be found in the `pipeline` directory:
 
-    Contains info on initial pre-processing of Electronic Health Records consisting of early warning score measurements and vital signs for individuals residing in Denmark, with a general admission to the hospitals in the region of Zealand, Denmark, between 2018-2023.
+<!-- prettier-ignore -->
+| Script | Description | Command |
+|--------|-------------|---------|
+| `preprocessing.R` | Initial pre-processing of Electronic Health Records consisting of early warning score measurements and vital signs for individuals residing in Denmark, with a general admission to the hospitals in the region of Zealand, Denmark, between 2018-2023. | `pixi run preprocessing` |
+| `extract_metadata.R` | Addition of other clinical data, consisting of procedures, diagnoses, blood tests, and ITA information. | `pixi run extract_metadata` |
+| `extract_embeddings.py` | Addition of text embeddings from the metadata using static embeddings. | `pixi run extract_embeddings` |
+| `analysis_main.R` | Comparison of various models and algorithms for early warning systems:<br>• Implementation of the weighting model (CBPS) for the individuals<br>• 🔗 [NEWS](https://www.england.nhs.uk/ourwork/clinical-policy/sepsis/nationalearlywarningscore) (National Early Warning Score)<br>• 🔗 NEWS-Light: NEWS2 - Blood Pressure - Temperature<br>• 🔗 [DEWS](http://doi.org/10.1097/CCM.0000000000005842) (Demographic Early Warning Score): NEWS2-Light + Age + Sex<br>• 🔗 XGB-EWS: Age + Sex + Vital Signs + Number of Previous Hospitalizations + Embeddings of Previous Medical Procedures and Diagnoses + historical averages of blood test values + time-related recording information<br>• Grouped Cross-Validation based on hospitals<br>• AUC, Brier Score, Calibration, Net Benefit (Differences) | `pixi run analysis_main` |
+| `analysis_composite_outcome.R` | Analysis of composite outcomes (ICU + Death). | `pixi run analysis_composite` |
 
-    -   `Pre_Processing_Latest.R` contains R code with the initial pre-processing of the EWS data
+### EWS models
 
--   `Merging`
+- [XGBoost](https://xgboost.readthedocs.io/en/stable)
+- [Logistic regression](https://parsnip.tidymodels.org/reference/logistic_reg.html)
 
-    -   `Supplemental_Data_Latest.R` contains R code with merging of other clinical data, consisting of procedures, diagnoses, blood tests, and ITA information.
+### Embedding models
 
--   `modelling`
+- Static embeddings of medical procedures/diagnoses trajectories using
+  [model2vec](https://github.com/MinishLab/model2vec)'s
+  [potion-multilingual-128M](https://huggingface.co/minishlab/potion-multilingual-128M)
+  model
+- Logistic regression for Covariate Balancing Propensity Score (CBPS) using the
+  [weightit](https://ngreifer.github.io/WeightIt) R package
 
-    -   `EWS_Modelling.R` :
-        -   Contains R code comparing various models and algorithms for early warning systems
-        -   Implementation of the weighting model (CBPS) for the individuals
-        -   🔗 NEWS: (<https://www.england.nhs.uk/ourwork/clinical-policy/sepsis/nationalearlywarningscore/>)
-        -   🔗 NEWS-Light: NEWS2 - Blood Pressure - Temperature
-        -   🔗 DEWS: NEWS2-Light + Age + Sex (<https://journals.lww.com/ccmjournal/fulltext/2023/07000/development_and_external_validation_of_the.4.aspx>)
-        -   🔗 XGB-EWS: Age + Sex + Vital Signs + Number of Previous Hospitalizations + Embeddings of Previous Medical Procedures and Diagnoses + historical averages of blood test values + time-related recording information
-        -   Grouped Cross-Validation based on hospitals
-        -   AUC, Brier Score, Calibration, Net Benefit (Differences)
-    -   `M2V_Embeddings.ipynb` :
-        -   Contains python code for generating the full embeddings + PCA for dimensionality reduction
-    -   `Sensitivity_Embeddings.ipynb` :
-        -   Contains python code for generating the full embeddings + PCA for dimensionality reduction using a bigger sentence transformer of 560M parameters with instruction (multilingual-e5-large-instruct)
+## Summary
 
--   **Accomplished stuff:**
+- Assessment of NEWS current system based on predictive performance metrics
+  using data-splitting techniques ✅.
 
-    -   Assessment of NEWS current system based on predictive performance metrics using data-splitting techniques ✅.
+- De-biasing the dataset with IPW (Inverse Probability Weighting) based on
+  intervention scenarios ✅
 
-    -   De-biasing the dataset with IPW (Inverse Probability Weighting) based on intervention scenarios ✅
+- Development of alternative early warning score systems and model comparison ✅
 
-    -   Development of alternative early warning score systems and model comparison ✅
+- Outcome: 24-hour mortality prediction after initial NEWS score ✅
 
-    -   Outcome: 24-hour mortality prediction after initial NEWS score ✅
+- Used scores: Initial score at admission ✅
 
-    -   Used scores: Initial score at admission ✅
-
-    -   Assess calibration and net benefit on various strata of target population ✅
+- Assess calibration and net benefit on various strata of target population ✅
