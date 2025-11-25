@@ -27,34 +27,14 @@ print(torch.cuda.is_available())
 
 All main scripts can be found in the `pipeline` directory:
 
-- `preprocessing.R`: initial pre-processing of Electronic Health Records
-  consisting of early warning score measurements and vital signs for individuals
-  residing in Denmark, with a general admission to the hospitals in the region
-  of Zealand, Denmark, between 2018-2023.
-  - To run this step: `pixi run preprocessing`
-- `extract_metadata.R`: addition of other clinical data, consisting of
-  procedures, diagnoses, blood tests, and ITA information.
-  - To run this step: `pixi run extract_metadata`
-- `extract_embeddings.R`: addition of text embeddings from the metadata using
-  static embeddings
-  - To run this step: `pixi run extract_embeddings`
-- `analysis_main.R`: comparison of various models and algorithms for early
-  warning systems
-  - Implementation of the weighting model (CBPS) for the individuals
-  - 🔗
-    [NEWS](https://www.england.nhs.uk/ourwork/clinical-policy/sepsis/nationalearlywarningscore)
-    (National Early Warning Score)
-  - 🔗 NEWS-Light: NEWS2 - Blood Pressure - Temperature
-  - 🔗 [DEWS](http://doi.org/10.1097/CCM.0000000000005842) (Demographic Early
-    Warning Score): NEWS2-Light + Age + Sex
-  - 🔗 XGB-EWS: Age + Sex + Vital Signs + Number of Previous Hospitalizations +
-    Embeddings of Previous Medical Procedures and Diagnoses + historical
-    averages of blood test values + time-related recording information
-  - Grouped Cross-Validation based on hospitals
-  - AUC, Brier Score, Calibration, Net Benefit (Differences)
-  - To run this step: `pixi run analysis_main`
-- `analysis_composite_outcome.R`: analysis of composite outcomes (ICU + Death)
-  - - To run this step: `pixi run analysis_composite`
+<!-- prettier-ignore -->
+| Script | Description | Command |
+|--------|-------------|---------|
+| `preprocessing.R` | Initial pre-processing of Electronic Health Records consisting of early warning score measurements and vital signs for individuals residing in Denmark, with a general admission to the hospitals in the region of Zealand, Denmark, between 2018-2023. | `pixi run preprocessing` |
+| `extract_metadata.R` | Addition of other clinical data, consisting of procedures, diagnoses, blood tests, and ITA information. | `pixi run extract_metadata` |
+| `extract_embeddings.py` | Addition of text embeddings from the metadata using static embeddings. | `pixi run extract_embeddings` |
+| `analysis_main.R` | Comparison of various models and algorithms for early warning systems:<br>• Implementation of the weighting model (CBPS) for the individuals<br>• 🔗 [NEWS](https://www.england.nhs.uk/ourwork/clinical-policy/sepsis/nationalearlywarningscore) (National Early Warning Score)<br>• 🔗 NEWS-Light: NEWS2 - Blood Pressure - Temperature<br>• 🔗 [DEWS](http://doi.org/10.1097/CCM.0000000000005842) (Demographic Early Warning Score): NEWS2-Light + Age + Sex<br>• 🔗 XGB-EWS: Age + Sex + Vital Signs + Number of Previous Hospitalizations + Embeddings of Previous Medical Procedures and Diagnoses + historical averages of blood test values + time-related recording information<br>• Grouped Cross-Validation based on hospitals<br>• AUC, Brier Score, Calibration, Net Benefit (Differences) | `pixi run analysis_main` |
+| `analysis_composite_outcome.R` | Analysis of composite outcomes (ICU + Death). | `pixi run analysis_composite` |
 
 ### EWS models
 

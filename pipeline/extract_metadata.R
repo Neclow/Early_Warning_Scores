@@ -302,7 +302,16 @@ write_parquet(tests_imputed, "tests_latest.parquet")
 
 df <- read_parquet("/home/alex/ews/NEWS2_Evaluation/single_ews_imp_v2.parquet")
 
-blood_test_cols <- setdiff(names(tests_imputed), c("PT_ID", "Blood_Test_End"))
+blood_test_cols <- setdiff(
+  names(tests_imputed),
+  c(
+    "PT_ID",
+    "Blood_Test_End",
+    "Blood_Test_Status",
+    "EnterpriseID",
+    "Blood_Test_Start"
+  )
+)
 
 # Using duckdb
 
@@ -319,7 +328,7 @@ agg_part <- paste0(
   "MEDIAN(",
   blood_test_cols,
   ") AS median_",
-  blood_test_columns,
+  blood_test_cols,
   collapse = ", "
 )
 
@@ -360,13 +369,6 @@ df <- df |>
 # Clean up memory
 rm(df_labs_agg)
 gc()
-
-df <- df |>
-  select(
-    -median_Blood_Test_End,
-    -median_Blood_Test_Start,
-    -median_Blood_Test_Status
-  )
 
 # ==============================
 # 6. ADD ICU HISTORY & FLAGS
